@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using System.Threading.Tasks;
 
 namespace LittleLinguist.Pages;
 
@@ -14,6 +15,7 @@ FALTA:
 public class HomePage : ContentPage
 {
     private SettingsPage? settingsPage;
+    private StoryPage? storyPage;
 
     public HomePage()
     {
@@ -122,10 +124,16 @@ public class HomePage : ContentPage
         object? sender,
         RoutedEventArgs e)
     {
+        if(storyPage == null)
+        {
+            storyPage = new StoryPage();
+            await storyPage.GenerateStory();
+        }
+
         if (Navigation is not null)
         {
             // De momento también abre SettingsPage.
-            await Navigation.PushAsync(new StoryPage());
+            await Navigation.PushAsync(storyPage);
         }
     }
 }

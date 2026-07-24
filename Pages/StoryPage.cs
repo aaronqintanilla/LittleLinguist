@@ -3,8 +3,15 @@ using Avalonia.Layout;
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Interactivity;
+using System;
+using System.Collections.Generic;
+using LLama;
+using LLama.Common;
+using LLama.Sampling;
+using System.Threading.Tasks;
 
 namespace LittleLinguist.Pages;
+
 
 /*
 FALTA:
@@ -15,6 +22,8 @@ FALTA:
 
 public class StoryPage : ContentPage
 {
+    TextBlock storyText = new TextBlock();
+
     public StoryPage()
     {
         // Grid principal
@@ -26,8 +35,7 @@ public class StoryPage : ContentPage
         grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
 
         // Texto de la historia
-        var storyText = new TextBlock();
-        storyText.Text = " TEXTO DE PRUEBA  TEXTO DE PRUEBA  TEXTO DE PRUEBA  TEXTO DE PRUEBA  TEXTO DE PRUEBA  TEXTO DE PRUEBA  TEXTO DE PRUEBA  TEXTO DE PRUEBA  TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA TEXTO DE PRUEBA ";
+        storyText.Text = "";
         storyText.TextWrapping = TextWrapping.Wrap;
         storyText.FontSize = 18;
 
@@ -81,5 +89,39 @@ public class StoryPage : ContentPage
     {
         //await Navigation.PopAsync();
         //await Navigation.PushAsync(new FALTANOMBRE());
+    }
+
+    public async Task GenerateStory()
+    {
+        string modelPath = "/home/irene/Downloads/gemma-3-1b-it-q4_0.gguf";
+
+        var parameters = new ModelParams(modelPath)
+        {
+            ContextSize = 2048,
+            GpuLayerCount = 0
+        };
+
+        Console.WriteLine("Loading model...");
+        var model = LLamaWeights.LoadFromFile(parameters);
+        var context = model.CreateContext(parameters);
+
+        var executor = new InteractiveExecutor(context);
+        var session = new ChatSession(executor);
+
+        var inferenceParams = new InferenceParams
+        {
+            MaxTokens = -1,
+            AntiPrompts = new List<string> { "<|im_end|>", "<|im_start|>" },
+            SamplingPipeline = new DefaultSamplingPipeline { Temperature = 0.7f, MinP = 0.3f }
+        };
+
+        string? input = "Write a story about Laia, my friend";
+
+        await foreach (var token in session.ChatAsync(new ChatHistory.Message(AuthorRole.User, input), inferenceParams))
+        {
+            // Aquí puedes actualizar la interfaz de usuario con el token generado.
+            // Por ejemplo, podrías agregarlo a un TextBlock o similar.
+            storyText.Text += token;
+        }
     }
 }
