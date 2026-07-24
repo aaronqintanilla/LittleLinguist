@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace LittleLinguist.Views;
+namespace LittleLinguist;
 
 public partial class MainWindow : Window
 {

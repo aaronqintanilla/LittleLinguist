@@ -3,17 +3,22 @@ using System;
 
 namespace LittleLinguist;
 
-sealed class Program
+class Program
 {
-    // Código de inicialización. No uses APIs de Avalonia antes de llamar a AppMain.
+    // Initialization code. Don't use any Avalonia, third-party APIs or any
+    // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
+    // yet and stuff might break.
     [STAThread]
     public static void Main(string[] args) => BuildAvaloniaApp()
         .StartWithClassicDesktopLifetime(args);
 
-    // Configuración de Avalonia (utilizada también por el previsualizador visual)
+    // Avalonia configuration, don't remove; also used by visual designer.
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
+#if DEBUG
+            .WithDeveloperTools()
+#endif
             .WithInterFont()
             .LogToTrace();
 }

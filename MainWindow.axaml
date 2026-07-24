@@ -1,0 +1,24 @@
+<Window
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:pages="using:LittleLinguist.Pages"
+    x:Class="LittleLinguist.MainWindow"
+
+    Title="Little Linguist"
+    Width="900"
+    Height="600"
+    MinWidth="700"
+    MinHeight="450">
+
+    <!--
+        NavigationPage controla qué página se muestra
+        y conserva el historial de navegación.
+    -->
+    <NavigationPage>
+
+        <!-- Primera página que aparece al iniciar -->
+        <pages:HomePage/>
+
+    </NavigationPage>
+
+</Window>
