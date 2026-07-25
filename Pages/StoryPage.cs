@@ -81,7 +81,10 @@ public class StoryPage : ContentPage
     // Vuelve a la página anterior (Home)
     private async void FinishButton_Click(object? sender, RoutedEventArgs e)
     {
-        await Navigation.PopAsync();
+        if(Navigation is not null)
+        {
+            await Navigation.PopAsync();
+        }
     }
 
     // Pasa a la siguiente página
@@ -93,7 +96,7 @@ public class StoryPage : ContentPage
 
     public async Task GenerateStory()
     {
-        string modelPath = "/home/irene/Downloads/gemma-3-1b-it-q4_0.gguf";
+        string modelPath = $"{System.IO.Directory.GetCurrentDirectory()}/models/gemma-3-1b-it-q4_0.gguf";
 
         var parameters = new ModelParams(modelPath)
         {

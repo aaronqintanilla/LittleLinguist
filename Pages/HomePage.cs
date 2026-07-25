@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
-using System.Threading.Tasks;
 
 namespace LittleLinguist.Pages;
 
@@ -20,7 +19,9 @@ public class HomePage : ContentPage
     public HomePage()
     {
         // Fondo de la página.
-        Background = new SolidColorBrush(Color.Parse("#FFF7FC"));
+        // Como el tema por defecto es el del ordenador, esto puede hacer que se vea raro si esta en modo oscuro
+        // Habria que definir el estilo de la aplicacion en Program.cs
+        //Background = new SolidColorBrush(Color.Parse("#FFF7FC"));
 
         // ---------------------------------------------------------
         // BOTÓN SETTINGS
