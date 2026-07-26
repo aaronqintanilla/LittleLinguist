@@ -9,6 +9,7 @@ namespace LittleLinguist.Pages;
 /*
 FALTA:
 1. cambiar el botón start para que depende de las competencias seleccionadas vaya a una página u otra 
+2. cambiar el diseño de la interfaz
 */
 
 public class HomePage : ContentPage
@@ -128,13 +129,15 @@ public class HomePage : ContentPage
         if(storyPage == null)
         {
             storyPage = new StoryPage();
-            await storyPage.GenerateStory();
+            //await storyPage.GenerateStory();
         }
 
         if (Navigation is not null)
         {
             // De momento también abre SettingsPage.
             await Navigation.PushAsync(storyPage);
+            //PRUEBA
+            await storyPage.GenerateStory();
         }
     }
 }

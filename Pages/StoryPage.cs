@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Avalonia.Interactivity;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using LLama;
 using LLama.Common;
 using LLama.Sampling;
@@ -16,8 +17,10 @@ namespace LittleLinguist.Pages;
 /*
 FALTA:
 1. elegir pregunta ¿aleatoriamente? e ir a esa página (hacer el next button)
-2. traer el texto del LLM
-3. cambiar el diseño, que es feísimo
+2. arreglar modelo LLM
+- poner modelo LLM en un archivo diferente, compartido por todas las pestañas para que la historia pueda continuar
+- generar historias diferentes, siempre es sobre un pájaro llamado Pip
+3. cambiar el diseño de la interfaz
 */
 
 public class StoryPage : ContentPage
@@ -106,24 +109,28 @@ public class StoryPage : ContentPage
 
         Console.WriteLine("Loading model...");
         var model = LLamaWeights.LoadFromFile(parameters);
-        var context = model.CreateContext(parameters);
 
+        var context = model.CreateContext(parameters);
         var executor = new InteractiveExecutor(context);
         var session = new ChatSession(executor);
 
         var inferenceParams = new InferenceParams
         {
-            MaxTokens = -1,
-            AntiPrompts = new List<string> { "<|im_end|>", "<|im_start|>" },
-            SamplingPipeline = new DefaultSamplingPipeline { Temperature = 0.7f, MinP = 0.3f }
+            MaxTokens = 400,
+            //AntiPrompts = new List<string> { "<|im_end|>", "<|im_start|>" },
+            SamplingPipeline = new DefaultSamplingPipeline { Temperature = 1.0f, MinP = 0.0f }
         };
 
-        string? input = "Write a story about Laia, my friend";
+        string input = "Write exactly the first THREE paragraphs of a children's story. Output only the story. The response must begin with Once upon a time. Do not include introductions, explanations or comments. Write exactly the first three paragraphs of the story. End your response immediately after the third paragraph.";
+
+        string generatedText = "";  //Control
 
         await foreach (var token in session.ChatAsync(new ChatHistory.Message(AuthorRole.User, input), inferenceParams))
         {
-            // Aquí puedes actualizar la interfaz de usuario con el token generado.
-            // Por ejemplo, podrías agregarlo a un TextBlock o similar.
+            //Control
+            generatedText += token;
+            if (generatedText.Contains("```")) break;
+
             storyText.Text += token;
         }
     }

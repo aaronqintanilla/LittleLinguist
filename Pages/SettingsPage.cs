@@ -10,6 +10,7 @@ namespace LittleLinguist.Pages;
 FALTA:
 1. guardar els settings en un fitxer json
 2. que no es pugui començar amb 0 competencies (que hace back vs que hace guardar, etc)
+3. cambiar el diseño de la interfaz
 */
 
 public class SettingsPage : ContentPage
