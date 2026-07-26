@@ -129,15 +129,13 @@ public class HomePage : ContentPage
         if(storyPage == null)
         {
             storyPage = new StoryPage();
-            //await storyPage.GenerateStory();
+            storyPage.StartStory();
         }
 
         if (Navigation is not null)
         {
             // De momento también abre SettingsPage.
             await Navigation.PushAsync(storyPage);
-            //PRUEBA
-            await storyPage.GenerateStory();
         }
     }
 }

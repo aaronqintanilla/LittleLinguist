@@ -24,10 +24,10 @@ class Program
 }
 
 */
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Themes.Fluent;
-
 using HomePage = LittleLinguist.Pages.HomePage;
 
 class Program
@@ -39,7 +39,7 @@ class Program
                   .Start(AppMain, args);
     }
 
-    static void AppMain(Application app, string[] args)
+    static async void AppMain(Application app, string[] args)
     {
         app.Styles.Add(new FluentTheme());
 
@@ -54,6 +54,7 @@ class Program
         var navigationPage = new NavigationPage();
         navigationPage.Content = homePage;
         window.Content = navigationPage;
+        await StoryGenerator.Instance.LoadModel();
 
         window.Show();
         app.Run(window);
