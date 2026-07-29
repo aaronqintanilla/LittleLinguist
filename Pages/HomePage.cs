@@ -10,7 +10,7 @@ public class HomePage : ContentPage
 {
     private SettingsPage? settingsPage;
     private StoryPage? storyPage;
-    
+
     public HomePage()
     {
         //Background =
@@ -85,21 +85,6 @@ public class HomePage : ContentPage
 
     storyButton.Click += StoryButton_Click;
 
-    // ---------------------------------------------------------
-    // BOTÓN WRITING
-    // ---------------------------------------------------------
-
-    var writingButton = new Button
-    {
-        Content = "Practise writing",
-        FontSize = 20,
-        Padding = new Thickness(30, 14),
-        HorizontalAlignment = HorizontalAlignment.Stretch,
-        HorizontalContentAlignment = HorizontalAlignment.Center
-    };
-
-    writingButton.Click += WritingButton_Click;
-
         // ---------------------------------------------------------
         // PANEL CENTRAL
         // ---------------------------------------------------------
@@ -114,8 +99,7 @@ public class HomePage : ContentPage
             {
                 title,
                 subtitle,
-                storyButton,
-                writingButton
+                storyButton
             }
         };
 

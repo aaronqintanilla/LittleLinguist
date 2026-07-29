@@ -14,22 +14,6 @@ public class WritingPage : ContentPage
 
     public WritingPage(string word = "APPLE")
     {
-        //Background =
-            //new SolidColorBrush(Color.Parse("#FFF7FC"));
-
-        // ---------------------------------------------------------
-        // BOTÓN BACK
-        // ---------------------------------------------------------
-
-        var backButton = new Button
-        {
-            Content = "← Back",
-            Padding = new Thickness(18, 10),
-            HorizontalAlignment = HorizontalAlignment.Left
-        };
-
-        backButton.Click += BackButton_Click;
-
         // ---------------------------------------------------------
         // TÍTULO E INSTRUCCIONES
         // ---------------------------------------------------------
@@ -71,7 +55,8 @@ public class WritingPage : ContentPage
             FontSize = 18,
             FontWeight = FontWeight.SemiBold,
             TextAlignment = TextAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextWrapping = TextWrapping.Wrap
         };
 
         // ---------------------------------------------------------
@@ -90,12 +75,12 @@ public class WritingPage : ContentPage
         clearButton.Click += ClearButton_Click;
 
         // ---------------------------------------------------------
-        // BOTÓN CHECK
+        // BOTÓN CONTINUE
         // ---------------------------------------------------------
 
-        var checkButton = new Button
+        var continueButton = new Button
         {
-            Content = "Check",
+            Content = "Continue",
             FontSize = 18,
             FontWeight = FontWeight.Bold,
             Padding = new Thickness(25, 12),
@@ -103,21 +88,23 @@ public class WritingPage : ContentPage
             HorizontalContentAlignment = HorizontalAlignment.Center
         };
 
-        checkButton.Click += CheckButton_Click;
+        continueButton.Click += ContinueButton_Click;
+
+        // ---------------------------------------------------------
+        // GRID DE BOTONES
+        // ---------------------------------------------------------
 
         var buttonsGrid = new Grid
         {
-            ColumnDefinitions =
-                ColumnDefinitions.Parse("*,*"),
-
+            ColumnDefinitions = ColumnDefinitions.Parse("*,*"),
             ColumnSpacing = 20
         };
 
         Grid.SetColumn(clearButton, 0);
-        Grid.SetColumn(checkButton, 1);
+        Grid.SetColumn(continueButton, 1);
 
         buttonsGrid.Children.Add(clearButton);
-        buttonsGrid.Children.Add(checkButton);
+        buttonsGrid.Children.Add(continueButton);
 
         // ---------------------------------------------------------
         // CONTENIDO COMPLETO
@@ -130,7 +117,6 @@ public class WritingPage : ContentPage
 
             Children =
             {
-                backButton,
                 title,
                 instructions,
                 _tracingCanvas,
@@ -145,6 +131,7 @@ public class WritingPage : ContentPage
         };
     }
 
+    // Borra los trazos y el mensaje.
     private void ClearButton_Click(
         object? sender,
         RoutedEventArgs e)
@@ -153,7 +140,8 @@ public class WritingPage : ContentPage
         _feedbackText.Text = "";
     }
 
-    private void CheckButton_Click(
+    // Comprueba la palabra antes de continuar.
+    private async void ContinueButton_Click(
         object? sender,
         RoutedEventArgs e)
     {
@@ -161,23 +149,19 @@ public class WritingPage : ContentPage
 
         if (score >= 0.80)
         {
-            _feedbackText.Text =
-                $"✅ Great job! Score: {score:P0}";
+            // La palabra está bien: vuelve a StoryPage.
+            if (Navigation is not null)
+            {
+                await Navigation.PopAsync();
+            }
         }
         else
         {
-            _feedbackText.Text =
-                $"✏️ Try again. Score: {score:P0}";
-        }
-    }
+            // La palabra está mal: borra y obliga a repetirla.
+            _tracingCanvas.Clear();
 
-    private async void BackButton_Click(
-        object? sender,
-        RoutedEventArgs e)
-    {
-        if (Navigation is not null)
-        {
-            await Navigation.PopAsync();
+            _feedbackText.Text =
+                $"✏️ Try again. Write the whole word carefully. Score: {score:P0}";
         }
     }
 }

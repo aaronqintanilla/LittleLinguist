@@ -11,7 +11,8 @@ using LLama.Common;
 using LLama.Sampling;
 using System.Threading.Tasks;
 using Avalonia.Controls.Primitives;
-
+using System.Linq;
+using System.Text.RegularExpressions;
 namespace LittleLinguist.Pages;
 
 
@@ -130,6 +131,38 @@ public class StoryPage : ContentPage
         StoryGenerator.Instance.StopStory();
         SpeechReader.Instance.Pause();
         playButton.Content = "Play";
+        // StoryGenerator.Instance.StopStory()
+    // Detiene la generación y la lectura.
+
+    if (Navigation is null)
+    {
+        return;
+    }
+
+    string story = storyText.Text ?? "";
+
+    // Extrae palabras de entre 3 y 10 letras.
+    List<string> words = Regex
+        .Matches(story, @"\b[A-Za-z]{3,10}\b")
+        .Select(match => match.Value)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+    if (words.Count == 0)
+    {
+        return;
+    }
+
+    // Elige una palabra aleatoria.
+    string randomWord =
+        words[Random.Shared.Next(words.Count)];
+
+    Console.WriteLine($"Selected word: {randomWord}");
+
+    await Navigation.PushAsync(
+        new WritingPage(randomWord)
+    );
+
     }
 
     public async void StartStory()
