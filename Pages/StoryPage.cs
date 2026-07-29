@@ -10,6 +10,7 @@ using LLama;
 using LLama.Common;
 using LLama.Sampling;
 using System.Threading.Tasks;
+using Avalonia.Controls.Primitives;
 
 namespace LittleLinguist.Pages;
 
@@ -27,6 +28,9 @@ FALTA:
 public class StoryPage : ContentPage
 {
     TextBlock storyText = new TextBlock();
+
+    // Botón Play
+    Button playButton = new Button();
 
     public StoryPage()
     {
@@ -72,6 +76,33 @@ public class StoryPage : ContentPage
 
         nextButton.Click += NextButton_Click;
 
+        // Botón Play / Pause
+        playButton.Content = "Play";
+        playButton.Padding = new Thickness(20, 10);
+        playButton.Click += PlayButton_Click;
+
+        // Slider de velocidad: a la derecha, más rápido
+        var speedSlider = new Slider();
+        speedSlider.Minimum = 0.5;
+        speedSlider.Maximum = 2.5;
+        speedSlider.Value = 1.5;
+        speedSlider.Width = 200;
+        speedSlider.TickFrequency = 0.1;
+        speedSlider.IsSnapToTickEnabled = true;
+        speedSlider.ValueChanged += SpeedSlider_ValueChanged;
+
+        var speedLabel = new TextBlock();
+        speedLabel.Text = "Speed";
+        speedLabel.VerticalAlignment = VerticalAlignment.Center;
+
+        var speedPanel = new StackPanel();
+        speedPanel.Orientation = Orientation.Horizontal;
+        speedPanel.Spacing = 10;
+        speedPanel.VerticalAlignment = VerticalAlignment.Center;
+        speedPanel.Children.Add(speedLabel);
+        speedPanel.Children.Add(speedSlider);
+        buttonPanel.Children.Add(playButton);
+        buttonPanel.Children.Add(speedPanel);
         buttonPanel.Children.Add(finishButton);
         buttonPanel.Children.Add(nextButton);
         Grid.SetRow(buttonPanel, 1);
@@ -97,10 +128,35 @@ public class StoryPage : ContentPage
         //await Navigation.PopAsync();
         //await Navigation.PushAsync(new FALTANOMBRE());
         StoryGenerator.Instance.StopStory();
+        SpeechReader.Instance.Pause();
+        playButton.Content = "Play";
     }
 
     public async void StartStory()
     {
         await StoryGenerator.Instance.WriteStory(storyText);
+    }
+
+    // Alterna entre reproducir y pausar el audio
+    private void PlayButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (SpeechReader.Instance.IsPlaying)
+        {
+            SpeechReader.Instance.Pause();
+            playButton.Content = "Play";
+        }
+        else
+        {
+            SpeechReader.Instance.Play();
+            playButton.Content = "Pause";
+        }
+    }
+
+    // Ajusta la velocidad de lectura.
+    // El slider va de lento (izquierda) a rápido (derecha),
+    // mientras que Piper usa la escala contraria.
+    private void SpeedSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
+    {
+        SpeechReader.Instance.SetSpeed((float)(3.0 - e.NewValue));
     }
 }

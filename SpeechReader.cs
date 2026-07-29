@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Globalization;
+using System.Collections.Generic;
 
 // Converts text into speech using the Piper engine and plays it
 // through the system's default audio output.
@@ -17,16 +18,27 @@ public class SpeechReader : IDisposable
     private readonly string _piperPath;
     private readonly string _modelPath;
 
+    // Sentences not yet spoken, kept so they can be regenerated
+    // if the speed changes. The first one is the sentence playing now.
+    private readonly List<string> _pendingSentences = new();
+    private readonly object _pendingLock = new();
+
     // Playback speed. Below 1.0 is faster, above 1.0 is slower.
-    private readonly float _lengthScale = 1.3f;
+    private float _lengthScale = 1.2f;
 
     // The playback process currently running, if any.
     private Process? _currentPlayback;
     private readonly object _playbackLock = new();
 
     // Identifies the current playback session.
-    // Incremented on Stop() so that work started earlier is discarded.
+    // Incremented whenever queued work must be discarded.
     private int _sessionId;
+
+    // Blocks the playback loop while paused. Starts in the paused state.
+    private readonly ManualResetEventSlim _playGate = new(false);
+
+    // True while audio is allowed to play.
+    public bool IsPlaying => _playGate.IsSet;
 
     // Sentences waiting to be converted into audio.
     private readonly BlockingCollection<(int Session, string Text)> _textQueue = new();
@@ -34,11 +46,11 @@ public class SpeechReader : IDisposable
     // Audio files already generated, waiting to be played.
     private readonly BlockingCollection<(int Session, string File)> _audioQueue = new(2);
 
-    // Used to stop the background loop when the application closes.
+    // Used to stop the background loops when the application closes.
     private readonly CancellationTokenSource _cancellation = new();
 
     // Locates the required files, verifies they exist and starts
-    // the background loop that will play the queued sentences.
+    // the background loops that generate and play the queued sentences.
     private SpeechReader()
     {
         string basePath = Path.Combine(AppContext.BaseDirectory, "resources");
@@ -63,7 +75,14 @@ public class SpeechReader : IDisposable
     {
         if (string.IsNullOrWhiteSpace(sentence)) return;
 
-        _textQueue.Add((Volatile.Read(ref _sessionId), sentence.Trim()));
+        string trimmed = sentence.Trim();
+
+        lock (_pendingLock)
+        {
+            _pendingSentences.Add(trimmed);
+        }
+
+        _textQueue.Add((Volatile.Read(ref _sessionId), trimmed));
     }
 
     // Queues the contents of a text file to be spoken. Returns immediately.
@@ -75,8 +94,66 @@ public class SpeechReader : IDisposable
         Speak(File.ReadAllText(filePath));
     }
 
+    // Allows the playback loop to continue.
+    public void Play()
+    {
+        _playGate.Set();
+    }
+
+    // Pauses playback immediately, cutting the current sentence short.
+    // That sentence is replayed from the beginning when Play() is called.
+    public void Pause()
+    {
+        _playGate.Reset();
+        KillPlayback();
+    }
+
+    // Stops everything and forgets every pending sentence.
+    public void Stop()
+    {
+        Interlocked.Increment(ref _sessionId);
+
+        lock (_pendingLock)
+        {
+            _pendingSentences.Clear();
+        }
+
+        DrainQueues();
+        KillPlayback();
+    }
+
+    // Sets the speaking speed and regenerates the sentences still
+    // pending, so the change is heard straight away.
+    public void SetSpeed(float lengthScale)
+    {
+        float newScale = Math.Clamp(lengthScale, 0.4f, 2.6f);
+
+        if (Math.Abs(newScale - _lengthScale) < 0.01f) return;
+
+        _lengthScale = newScale;
+
+        // Invalidate the audio generated at the old speed.
+        Interlocked.Increment(ref _sessionId);
+
+        DrainQueues();
+        KillPlayback();
+
+        // Requeue the same sentences under the new session.
+        List<string> remaining;
+
+        lock (_pendingLock)
+        {
+            remaining = new List<string>(_pendingSentences);
+        }
+
+        int session = Volatile.Read(ref _sessionId);
+
+        foreach (string sentence in remaining)
+            _textQueue.Add((session, sentence));
+    }
+
     // Background loop: converts queued sentences into audio files.
-    // Work belonging to a previous session is discarded.
+    // Work belonging to an earlier session is discarded.
     private void ProcessTextQueue()
     {
         foreach (var item in _textQueue.GetConsumingEnumerable(_cancellation.Token))
@@ -90,7 +167,7 @@ public class SpeechReader : IDisposable
             {
                 GenerateAudio(item.Text, tempFile);
 
-                // Check again: Stop() may have been called while generating.
+                // Check again: the session may have changed while generating.
                 if (item.Session != Volatile.Read(ref _sessionId))
                 {
                     File.Delete(tempFile);
@@ -98,6 +175,13 @@ public class SpeechReader : IDisposable
                 }
 
                 _audioQueue.Add((item.Session, tempFile), _cancellation.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                if (File.Exists(tempFile))
+                    File.Delete(tempFile);
+
+                return;
             }
             catch (Exception ex)
             {
@@ -110,24 +194,55 @@ public class SpeechReader : IDisposable
     }
 
     // Background loop: plays the generated audio files one after another.
+    // A sentence cut short by Pause() is replayed once playback resumes.
     private void ProcessAudioQueue()
     {
-        foreach (var item in _audioQueue.GetConsumingEnumerable(_cancellation.Token))
+        try
         {
-            try
+            foreach (var item in _audioQueue.GetConsumingEnumerable(_cancellation.Token))
             {
-                if (item.Session == Volatile.Read(ref _sessionId))
-                    PlayAudio(item.File);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine("Speech playback error: " + ex.Message);
-            }
-            finally
-            {
+                bool finished = false;
+
+                while (!finished)
+                {
+                    _playGate.Wait(_cancellation.Token);
+
+                    // The session changed: this audio is no longer valid.
+                    if (item.Session != Volatile.Read(ref _sessionId))
+                        break;
+
+                    try
+                    {
+                        PlayAudio(item.File);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine("Speech playback error: " + ex.Message);
+                        break;
+                    }
+
+                    // If the gate is still open, playback ended naturally.
+                    // If it is closed, Pause() cut it short: wait and replay.
+                    finished = _playGate.IsSet;
+                }
+
+                // Remove it from the pending list only if it was actually spoken.
+                if (finished && item.Session == Volatile.Read(ref _sessionId))
+                {
+                    lock (_pendingLock)
+                    {
+                        if (_pendingSentences.Count > 0)
+                            _pendingSentences.RemoveAt(0);
+                    }
+                }
+
                 if (File.Exists(item.File))
                     File.Delete(item.File);
             }
+        }
+        catch (OperationCanceledException)
+        {
+            // The application is closing.
         }
     }
 
@@ -200,37 +315,21 @@ public class SpeechReader : IDisposable
         }
     }
 
-    // Stops the background loop and releases resources.
-    public void Dispose()
+    // Empties both queues, deleting any audio file already generated.
+    private void DrainQueues()
     {
-        Stop();
-
-        _cancellation.Cancel();
-        _textQueue.CompleteAdding();
-        _audioQueue.CompleteAdding();
-        _cancellation.Dispose();
-        _textQueue.Dispose();
-        _audioQueue.Dispose();
-    }
-
-    // Stops the current sentence and discards everything still queued,
-    // including work that is being generated right now.
-    public void Stop()
-    {
-        // Invalidate everything belonging to the previous session.
-        Interlocked.Increment(ref _sessionId);
-
-        // Discard pending sentences.
         while (_textQueue.TryTake(out _)) { }
 
-        // Discard audio files already generated but not played.
         while (_audioQueue.TryTake(out var item))
         {
             if (File.Exists(item.File))
                 File.Delete(item.File);
         }
+    }
 
-        // Kill the sentence being played right now.
+    // Stops the sentence being played right now, if any.
+    private void KillPlayback()
+    {
         lock (_playbackLock)
         {
             try
@@ -240,7 +339,25 @@ public class SpeechReader : IDisposable
             }
             catch (InvalidOperationException)
             {
+                // The process had already finished. Nothing to do.
             }
         }
+    }
+
+    // Stops the background loops and releases resources.
+    public void Dispose()
+    {
+        Stop();
+
+        _cancellation.Cancel();
+        _playGate.Set();          // release the playback loop so it can exit
+
+        _textQueue.CompleteAdding();
+        _audioQueue.CompleteAdding();
+
+        _cancellation.Dispose();
+        _textQueue.Dispose();
+        _audioQueue.Dispose();
+        _playGate.Dispose();
     }
 }
