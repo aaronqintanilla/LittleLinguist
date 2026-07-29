@@ -15,7 +15,7 @@ public class WritingPage : ContentPage
     public WritingPage(string word = "APPLE")
     {
         // ---------------------------------------------------------
-        // TÍTULO E INSTRUCCIONES
+        // TÍTULO
         // ---------------------------------------------------------
 
         var title = new TextBlock
@@ -23,14 +23,20 @@ public class WritingPage : ContentPage
             Text = "Writing practice",
             FontSize = 32,
             FontWeight = FontWeight.Bold,
+            TextAlignment = TextAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center
         };
+
+        // ---------------------------------------------------------
+        // INSTRUCCIONES
+        // ---------------------------------------------------------
 
         var instructions = new TextBlock
         {
             Text = "Trace the word with your finger or digital pen.",
             FontSize = 18,
             TextAlignment = TextAlignment.Center,
+            TextWrapping = TextWrapping.Wrap,
             HorizontalAlignment = HorizontalAlignment.Center
         };
 
@@ -41,8 +47,13 @@ public class WritingPage : ContentPage
         _tracingCanvas = new TracingCanvas
         {
             TargetWord = word.ToUpperInvariant(),
-            Height = 280,
-            HorizontalAlignment = HorizontalAlignment.Stretch
+
+            // Ya no tiene una altura fija.
+            // Ocupará el espacio restante de la ventana.
+            MinHeight = 160,
+
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch
         };
 
         // ---------------------------------------------------------
@@ -55,8 +66,8 @@ public class WritingPage : ContentPage
             FontSize = 18,
             FontWeight = FontWeight.SemiBold,
             TextAlignment = TextAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            TextWrapping = TextWrapping.Wrap
+            TextWrapping = TextWrapping.Wrap,
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
 
         // ---------------------------------------------------------
@@ -97,7 +108,8 @@ public class WritingPage : ContentPage
         var buttonsGrid = new Grid
         {
             ColumnDefinitions = ColumnDefinitions.Parse("*,*"),
-            ColumnSpacing = 20
+            ColumnSpacing = 20,
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
 
         Grid.SetColumn(clearButton, 0);
@@ -107,31 +119,44 @@ public class WritingPage : ContentPage
         buttonsGrid.Children.Add(continueButton);
 
         // ---------------------------------------------------------
-        // CONTENIDO COMPLETO
+        // GRID PRINCIPAL
         // ---------------------------------------------------------
 
-        var mainPanel = new StackPanel
+        var mainGrid = new Grid
         {
             Margin = new Thickness(30),
-            Spacing = 20,
 
-            Children =
-            {
-                title,
-                instructions,
-                _tracingCanvas,
-                _feedbackText,
-                buttonsGrid
-            }
+            // Título: altura automática.
+            // Instrucciones: altura automática.
+            // Canvas: ocupa todo el espacio restante.
+            // Mensaje: altura automática.
+            // Botones: altura automática.
+            RowDefinitions =
+                RowDefinitions.Parse("Auto,Auto,*,Auto,Auto"),
+
+            RowSpacing = 20
         };
 
-        Content = new ScrollViewer
-        {
-            Content = mainPanel
-        };
+        Grid.SetRow(title, 0);
+        Grid.SetRow(instructions, 1);
+        Grid.SetRow(_tracingCanvas, 2);
+        Grid.SetRow(_feedbackText, 3);
+        Grid.SetRow(buttonsGrid, 4);
+
+        mainGrid.Children.Add(title);
+        mainGrid.Children.Add(instructions);
+        mainGrid.Children.Add(_tracingCanvas);
+        mainGrid.Children.Add(_feedbackText);
+        mainGrid.Children.Add(buttonsGrid);
+
+        // No utilizamos ScrollViewer.
+        Content = mainGrid;
     }
 
-    // Borra los trazos y el mensaje.
+    // ---------------------------------------------------------
+    // CLEAR
+    // ---------------------------------------------------------
+
     private void ClearButton_Click(
         object? sender,
         RoutedEventArgs e)
@@ -140,16 +165,20 @@ public class WritingPage : ContentPage
         _feedbackText.Text = "";
     }
 
-    // Comprueba la palabra antes de continuar.
+    // ---------------------------------------------------------
+    // CONTINUE
+    // ---------------------------------------------------------
+
     private async void ContinueButton_Click(
         object? sender,
         RoutedEventArgs e)
     {
-        double score = _tracingCanvas.CalculateScore();
+        double score =
+            _tracingCanvas.CalculateScore();
 
         if (score >= 0.80)
         {
-            // La palabra está bien: vuelve a StoryPage.
+            // La palabra está bien: volvemos a la historia.
             if (Navigation is not null)
             {
                 await Navigation.PopAsync();
@@ -157,7 +186,7 @@ public class WritingPage : ContentPage
         }
         else
         {
-            // La palabra está mal: borra y obliga a repetirla.
+            // La palabra está mal: borramos el trazado.
             _tracingCanvas.Clear();
 
             _feedbackText.Text =
