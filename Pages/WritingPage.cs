@@ -14,8 +14,8 @@ public class WritingPage : ContentPage
 
     public WritingPage(string word = "APPLE")
     {
-        Background =
-            new SolidColorBrush(Color.Parse("#FFF7FC"));
+        //Background =
+            //new SolidColorBrush(Color.Parse("#FFF7FC"));
 
         // ---------------------------------------------------------
         // BOTÓN BACK

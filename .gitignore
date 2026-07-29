@@ -6,7 +6,12 @@
 # dotenv files
 .env
 
+# Downloadable resources (see install-resources.sh)
+resources/
 models/
+
+# Temporary audio
+*.wav
 
 # User-specific files
 *.rsuser

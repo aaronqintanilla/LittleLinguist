@@ -21,6 +21,7 @@ FALTA:
 - poner modelo LLM en un archivo diferente, compartido por todas las pestañas para que la historia pueda continuar
 - generar historias diferentes, siempre es sobre un pájaro llamado Pip
 3. cambiar el diseño de la interfaz
+4. Si le da a continuar, que deje de leer el texto el SpeechReader
 */
 
 public class StoryPage : ContentPage
@@ -95,6 +96,7 @@ public class StoryPage : ContentPage
     {
         //await Navigation.PopAsync();
         //await Navigation.PushAsync(new FALTANOMBRE());
+        StoryGenerator.Instance.StopStory();
     }
 
     public async void StartStory()

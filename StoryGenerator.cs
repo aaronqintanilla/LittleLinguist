@@ -4,6 +4,9 @@ using LLama;
 using LLama.Common;
 using LLama.Sampling;
 using System.Threading.Tasks;
+using System.Text;
+using Avalonia.Threading;
+using System.Threading;
 
 public class StoryGenerator
 {
@@ -11,11 +14,16 @@ public class StoryGenerator
 
     ChatSession? session;
     InferenceParams? inferenceParams;
+    private readonly StringBuilder _currentSentence = new();
+
+    // Cancels the story currently being generated.
+    private CancellationTokenSource? _generation;
 
     private StoryGenerator(){}
 
     public async Task LoadModel()
     {
+        //DESCARGAR y guardar en models
         string modelPath = $"{System.IO.Directory.GetCurrentDirectory()}/models/gemma-3-1b-it-q4_0.gguf";
 
         var parameters = new ModelParams(modelPath)
@@ -35,27 +43,102 @@ public class StoryGenerator
         {
             MaxTokens = 400,
             //AntiPrompts = new List<string> { "<|im_end|>", "<|im_start|>" },
-            SamplingPipeline = new DefaultSamplingPipeline { Temperature = 1.0f, MinP = 0.0f }
+            SamplingPipeline = new DefaultSamplingPipeline { Temperature = 1.2f, MinP = 0.05f }
         };
     }
 
+    // Generates a story and writes it on screen token by token,
+    // sending each finished sentence to be read aloud.
+    // Calling it again cancels any story still being generated.
     public async Task WriteStory(TextBlock textBlock)
     {
-        if(session is null) return;
+        if (session is null) return;
+
+        // Cancel the previous story and stop its audio.
+        StopStory();
+
+        _generation = new CancellationTokenSource();
+        CancellationToken token = _generation.Token;
+
+        _currentSentence.Clear();
+        textBlock.Text = "";
 
         string input = "Write exactly the first THREE paragraphs of a children's story. Output only the story. The response must begin with Once upon a time. Do not include introductions, explanations or comments. Write exactly the first three paragraphs of the story. End your response immediately after the third paragraph.";
 
         string generatedText = "";  //Control
 
-        await foreach (var token in session.ChatAsync(new ChatHistory.Message(AuthorRole.User, input), inferenceParams))
+        try
         {
-            //Control
-            generatedText += token;
-            if (generatedText.Contains("```")) break;
+            var message = new ChatHistory.Message(AuthorRole.User, input);
 
-            textBlock.Text += token;
+            await foreach (var chunk in session.ChatAsync(message, inferenceParams, token))
+            {
+                token.ThrowIfCancellationRequested();
+
+                //Control
+                generatedText += chunk;
+                if (generatedText.Contains("```")) break;
+
+                OnTokenReceived(chunk, textBlock);
+            }
+
+            OnGenerationCompleted();
+        }
+        catch (OperationCanceledException)
+        {
+            // The user moved on to another story. Nothing to report.
         }
     }
+
+    // Cancels the story being generated and stops any audio.
+    public void StopStory()
+    {
+        _generation?.Cancel();
+        _generation?.Dispose();
+        _generation = null;
+
+        SpeechReader.Instance.Stop();
+        _currentSentence.Clear();
+    }
+
+    // Called for every token produced by the language model.
+    private void OnTokenReceived(string token, TextBlock textBlock)
+    {
+        // Show the token on screen straight away.
+        Dispatcher.UIThread.Post(() => textBlock.Text += token);
+
+        // Accumulate it until a full sentence is formed.
+        _currentSentence.Append(token);
+
+        if (EndsSentence(token))
+            FlushSentence();
+    }
+
+    // Returns true when the token closes a sentence.
+    private bool EndsSentence(string token)
+    {
+        return token.Contains('.')
+            || token.Contains('!')
+            || token.Contains('?')
+            || token.Contains('\n');
+    }
+
+    // Sends the accumulated sentence to be spoken and starts a new one.
+    private void FlushSentence()
+    {
+        string sentence = _currentSentence.ToString().Trim();
+        _currentSentence.Clear();
+
+        if (sentence.Length > 0)
+            SpeechReader.Instance.Speak(sentence);
+    }
+
+    // Called when the model has finished generating.
+    private void OnGenerationCompleted()
+    {
+        FlushSentence();
+    }
+
 }
 
 

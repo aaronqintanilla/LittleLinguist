@@ -13,8 +13,8 @@ public class HomePage : ContentPage
     
     public HomePage()
     {
-        Background =
-            new SolidColorBrush(Color.Parse("#FFF7FC"));
+        //Background =
+            //new SolidColorBrush(Color.Parse("#FFF7FC"));
 
         // ---------------------------------------------------------
         // BOTÓN SETTINGS

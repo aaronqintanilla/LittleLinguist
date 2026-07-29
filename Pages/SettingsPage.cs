@@ -25,7 +25,7 @@ public class SettingsPage : ContentPage
 
     public SettingsPage()
     {
-        Background = new SolidColorBrush(Color.Parse("#F5F5F5"));
+        //Background = new SolidColorBrush(Color.Parse("#F5F5F5"));
 
         // ---------------------------------------------------------
         // BOTÓN BACK

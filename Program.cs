@@ -30,6 +30,12 @@ using Avalonia.Controls;
 using Avalonia.Themes.Fluent;
 using HomePage = LittleLinguist.Pages.HomePage;
 
+/*
+FALTA:
+1. quitar el comentario de arriba
+2. comentar las clases y los métodos de "todos" los archivos
+*/
+
 class Program
 {
     public static void Main(string[] args)
@@ -55,6 +61,12 @@ class Program
         navigationPage.Content = homePage;
         window.Content = navigationPage;
         await StoryGenerator.Instance.LoadModel();
+
+        window.Closed += (_, _) =>
+        {
+            StoryGenerator.Instance.StopStory();
+            SpeechReader.Instance.Dispose();
+        };
 
         window.Show();
         app.Run(window);
