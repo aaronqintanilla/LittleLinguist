@@ -6,23 +6,15 @@ using Avalonia.Media;
 
 namespace LittleLinguist.Pages;
 
-/*
-FALTA:
-1. cambiar el botón start para que depende de las competencias seleccionadas vaya a una página u otra 
-2. cambiar el diseño de la interfaz
-*/
-
 public class HomePage : ContentPage
 {
     private SettingsPage? settingsPage;
     private StoryPage? storyPage;
-
+    
     public HomePage()
     {
-        // Fondo de la página.
-        // Como el tema por defecto es el del ordenador, esto puede hacer que se vea raro si esta en modo oscuro
-        // Habria que definir el estilo de la aplicacion en Program.cs
-        //Background = new SolidColorBrush(Color.Parse("#FFF7FC"));
+        Background =
+            new SolidColorBrush(Color.Parse("#FFF7FC"));
 
         // ---------------------------------------------------------
         // BOTÓN SETTINGS
@@ -60,24 +52,58 @@ public class HomePage : ContentPage
             Text = "Learn languages through a new adventure!",
             FontSize = 18,
             TextAlignment = TextAlignment.Center,
-            TextWrapping = TextWrapping.Wrap
+            TextWrapping = TextWrapping.Wrap,
+            HorizontalAlignment = HorizontalAlignment.Center
         };
 
         // ---------------------------------------------------------
         // BOTÓN START
         // ---------------------------------------------------------
 
-        var startButton = new Button
-        {
-            Content = "Start your adventure!",
-            FontSize = 20,
-            Padding = new Thickness(30, 14),
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
+        // var startButton = new Button
+        // {
+        //     Content = "Start your adventure!",
+        //     FontSize = 20,
+        //     Padding = new Thickness(30, 14),
+        //     HorizontalAlignment = HorizontalAlignment.Center
+        // };
 
-        startButton.Click += StartButton_Click;
+        // startButton.Click += StartButton_Click;
 
-        // Panel que coloca título, subtítulo y botón verticalmente.
+        // ---------------------------------------------------------
+// BOTÓN STORY
+// ---------------------------------------------------------
+
+    var storyButton = new Button
+    {
+        Content = "Create a story",
+        FontSize = 20,
+        Padding = new Thickness(30, 14),
+        HorizontalAlignment = HorizontalAlignment.Stretch,
+        HorizontalContentAlignment = HorizontalAlignment.Center
+    };
+
+    storyButton.Click += StoryButton_Click;
+
+    // ---------------------------------------------------------
+    // BOTÓN WRITING
+    // ---------------------------------------------------------
+
+    var writingButton = new Button
+    {
+        Content = "Practise writing",
+        FontSize = 20,
+        Padding = new Thickness(30, 14),
+        HorizontalAlignment = HorizontalAlignment.Stretch,
+        HorizontalContentAlignment = HorizontalAlignment.Center
+    };
+
+    writingButton.Click += WritingButton_Click;
+
+        // ---------------------------------------------------------
+        // PANEL CENTRAL
+        // ---------------------------------------------------------
+
         var centerPanel = new StackPanel
         {
             Width = 450,
@@ -88,11 +114,15 @@ public class HomePage : ContentPage
             {
                 title,
                 subtitle,
-                startButton
+                storyButton,
+                writingButton
             }
         };
 
-        // Grid principal.
+        // ---------------------------------------------------------
+        // GRID PRINCIPAL
+        // ---------------------------------------------------------
+
         var mainGrid = new Grid
         {
             Margin = new Thickness(25)
@@ -101,41 +131,68 @@ public class HomePage : ContentPage
         mainGrid.Children.Add(settingsButton);
         mainGrid.Children.Add(centerPanel);
 
-        // Mostramos el Grid como contenido de HomePage.
         Content = mainGrid;
     }
 
+    // Abre SettingsPage.
     private async void SettingsButton_Click(
         object? sender,
         RoutedEventArgs e)
     {
-        if(settingsPage == null)
-        {
-            settingsPage = new SettingsPage();
-        }
-
         if (Navigation is not null)
         {
-            await Navigation.PushAsync(settingsPage);
-
-            System.Console.WriteLine("Settings button clicked");
+            await Navigation.PushAsync(
+                new SettingsPage()
+            );
         }
     }
 
-    private async void StartButton_Click(
+    // Abre la página para practicar escritura.
+    // private async void StartButton_Click(
+    //     object? sender,
+    //     RoutedEventArgs e)
+    // {
+    //     if (Navigation is not null)
+    //     {
+    //         await Navigation.PushAsync(
+    //             new WritingPage("APPLE")
+    //         );
+    // }
+
+  private async void StoryButton_Click(
+    object? sender,
+    RoutedEventArgs e)
+    {
+        if (Navigation is null)
+        {
+            return;
+        }
+
+        if(storyPage == null)
+            {
+                storyPage = new StoryPage();
+                storyPage.StartStory();
+            }
+
+            if (Navigation is not null)
+            {
+                // De momento también abre SettingsPage.
+                await Navigation.PushAsync(storyPage);
+            }
+    }
+
+    
+
+    private async void WritingButton_Click(
         object? sender,
         RoutedEventArgs e)
     {
-        if(storyPage == null)
-        {
-            storyPage = new StoryPage();
-            storyPage.StartStory();
-        }
 
         if (Navigation is not null)
         {
-            // De momento también abre SettingsPage.
-            await Navigation.PushAsync(storyPage);
+            await Navigation.PushAsync(
+                new WritingPage("APPLE")
+            );
         }
     }
 }
