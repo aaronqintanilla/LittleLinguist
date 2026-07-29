@@ -61,6 +61,7 @@ class Program
         navigationPage.Content = homePage;
         window.Content = navigationPage;
         await StoryGenerator.Instance.LoadModel();
+        await VisionEngine.Instance.LoadModel();
 
         window.Closed += (_, _) =>
         {
