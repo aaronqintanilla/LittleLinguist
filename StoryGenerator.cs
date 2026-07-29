@@ -7,14 +7,28 @@ using System.Threading.Tasks;
 using System.Text;
 using Avalonia.Threading;
 using System.Threading;
+using System.Collections.Generic;
+
+/*
+FALTA:
+1. base de datos para que cambie la historia, siempre es repetitiva
+2. que genere diferentes momentos de la historia segun en que fase estamos: inicio, nudo, desenlace?
+*/
 
 public class StoryGenerator
 {
     public static StoryGenerator Instance {get;} = new StoryGenerator();
 
+    // Raised whenever the list of sentences changes, so the
+    // interface can redraw the story.
+    public event Action<List<string>>? SentencesChanged;
+
     ChatSession? session;
     InferenceParams? inferenceParams;
     private readonly StringBuilder _currentSentence = new();
+
+    // All sentences generated so far, in order.
+    private readonly List<string> _sentences = new();
 
     // Cancels the story currently being generated.
     private CancellationTokenSource? _generation;
@@ -61,7 +75,6 @@ public class StoryGenerator
         CancellationToken token = _generation.Token;
 
         _currentSentence.Clear();
-        textBlock.Text = "";
 
         string input = "Write exactly the first THREE paragraphs of a children's story. Output only the story. The response must begin with Once upon a time. Do not include introductions, explanations or comments. Write exactly the first three paragraphs of the story. End your response immediately after the third paragraph.";
 
@@ -79,7 +92,7 @@ public class StoryGenerator
                 generatedText += chunk;
                 if (generatedText.Contains("```")) break;
 
-                OnTokenReceived(chunk, textBlock);
+                OnTokenReceived(chunk);
             }
 
             OnGenerationCompleted();
@@ -98,20 +111,33 @@ public class StoryGenerator
         _generation = null;
 
         SpeechReader.Instance.Stop();
+
         _currentSentence.Clear();
+        _sentences.Clear();
+
+        SentencesChanged?.Invoke(new List<string>());
     }
 
     // Called for every token produced by the language model.
-    private void OnTokenReceived(string token, TextBlock textBlock)
+    private void OnTokenReceived(string token)
     {
-        // Show the token on screen straight away.
-        Dispatcher.UIThread.Post(() => textBlock.Text += token);
-
         // Accumulate it until a full sentence is formed.
         _currentSentence.Append(token);
 
         if (EndsSentence(token))
+        {
             FlushSentence();
+        }
+        else
+        {
+            // Show the sentence being written, still incomplete.
+            var preview = new List<string>(_sentences)
+            {
+                _currentSentence.ToString()
+            };
+
+            SentencesChanged?.Invoke(preview);
+        }
     }
 
     // Returns true when the token closes a sentence.
@@ -129,8 +155,12 @@ public class StoryGenerator
         string sentence = _currentSentence.ToString().Trim();
         _currentSentence.Clear();
 
-        if (sentence.Length > 0)
-            SpeechReader.Instance.Speak(sentence);
+        if (sentence.Length == 0) return;
+
+        _sentences.Add(sentence);
+        SpeechReader.Instance.Speak(sentence);
+
+        SentencesChanged?.Invoke(new List<string>(_sentences));
     }
 
     // Called when the model has finished generating.
@@ -138,7 +168,6 @@ public class StoryGenerator
     {
         FlushSentence();
     }
-
 }
 
 

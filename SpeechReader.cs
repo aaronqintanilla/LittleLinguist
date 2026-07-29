@@ -15,6 +15,10 @@ public class SpeechReader : IDisposable
 {
     public static SpeechReader Instance { get; } = new SpeechReader();
 
+    // Raised when a sentence starts playing, and with null when
+    // playback stops. Fired from a background thread.
+    public event Action<string?>? SentenceChanged;
+
     private readonly string _piperPath;
     private readonly string _modelPath;
 
@@ -44,7 +48,7 @@ public class SpeechReader : IDisposable
     private readonly BlockingCollection<(int Session, string Text)> _textQueue = new();
 
     // Audio files already generated, waiting to be played.
-    private readonly BlockingCollection<(int Session, string File)> _audioQueue = new(2);
+    private readonly BlockingCollection<(int Session, string Text, string File)> _audioQueue = new(2);
 
     // Used to stop the background loops when the application closes.
     private readonly CancellationTokenSource _cancellation = new();
@@ -106,6 +110,7 @@ public class SpeechReader : IDisposable
     {
         _playGate.Reset();
         KillPlayback();
+        SentenceChanged?.Invoke(null);
     }
 
     // Stops everything and forgets every pending sentence.
@@ -120,6 +125,7 @@ public class SpeechReader : IDisposable
 
         DrainQueues();
         KillPlayback();
+        SentenceChanged?.Invoke(null);
     }
 
     // Sets the speaking speed and regenerates the sentences still
@@ -174,7 +180,7 @@ public class SpeechReader : IDisposable
                     continue;
                 }
 
-                _audioQueue.Add((item.Session, tempFile), _cancellation.Token);
+                _audioQueue.Add((item.Session, item.Text, tempFile), _cancellation.Token);
             }
             catch (OperationCanceledException)
             {
@@ -213,6 +219,7 @@ public class SpeechReader : IDisposable
 
                     try
                     {
+                        SentenceChanged?.Invoke(item.Text);
                         PlayAudio(item.File);
                     }
                     catch (Exception ex)
@@ -226,13 +233,19 @@ public class SpeechReader : IDisposable
                     finished = _playGate.IsSet;
                 }
 
-                // Remove it from the pending list only if it was actually spoken.
-                if (finished && item.Session == Volatile.Read(ref _sessionId))
+                if (finished)
                 {
-                    lock (_pendingLock)
+                    // Nothing is being read now.
+                    SentenceChanged?.Invoke(null);
+
+                    // Remove it from the pending list only if it was spoken.
+                    if (item.Session == Volatile.Read(ref _sessionId))
                     {
-                        if (_pendingSentences.Count > 0)
-                            _pendingSentences.RemoveAt(0);
+                        lock (_pendingLock)
+                        {
+                            if (_pendingSentences.Count > 0)
+                                _pendingSentences.RemoveAt(0);
+                        }
                     }
                 }
 
