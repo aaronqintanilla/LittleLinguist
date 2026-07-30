@@ -86,12 +86,25 @@ public class VisionEngine : IDisposable
         mtmdParameters.UseGpu = false;
 
 
-        Console.WriteLine("Loaded model...");
+        //Console.WriteLine("Loaded model...");
 
-        _model = await LLamaWeights.LoadFromFileAsync(
-            modelParameters
-        );
+        try
+        {
+            Console.WriteLine($"Model path: {modelPath}");
+            Console.WriteLine($"Model size: {new FileInfo(modelPath).Length} bytes");
 
+            _model = await LLamaWeights.LoadFromFileAsync(
+                modelParameters
+            );
+
+            Console.WriteLine("Model loaded successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("MODEL LOAD ERROR:");
+            Console.Error.WriteLine(ex.ToString());
+            throw;
+        }
         _context =
             _model.CreateContext(modelParameters);
 
@@ -106,6 +119,12 @@ public class VisionEngine : IDisposable
         {
             throw new InvalidOperationException(
                 "The loaded model does not support images."
+            );
+        }
+        else 
+        {
+            Console.WriteLine(
+                "Vision model supports images."
             );
         }
 
@@ -127,15 +146,8 @@ public class VisionEngine : IDisposable
     // ---------------------------------------------------------
 
     public async Task<string> IdentifyObject(
-        string imagePath)
+        byte[] imageData)
     {
-        if (!File.Exists(imagePath))
-        {
-            throw new FileNotFoundException(
-                "Image not found.",
-                imagePath
-            );
-        }
 
         if (
             _model is null ||
@@ -154,11 +166,10 @@ public class VisionEngine : IDisposable
         try
         {
             ClearPreviousImage();
-
             // Convierte la imagen en información que entiende
             // el modelo multimodal.
             var imageEmbed =
-                _visionModel.LoadMedia(imagePath);
+                _visionModel.LoadMedia(imageData);
 
             _executor.Embeds.Add(imageEmbed);
 
@@ -174,12 +185,12 @@ public class VisionEngine : IDisposable
             var inferenceParameters =
                 new InferenceParams
                 {
-                    MaxTokens = 15,
+                    MaxTokens = 512,
 
                     SamplingPipeline =
                         new DefaultSamplingPipeline
                         {
-                            Temperature = 0.1f
+                            Temperature = 0.6f
                         }
                 };
 
@@ -202,12 +213,17 @@ public class VisionEngine : IDisposable
                 $"Vision raw response: {completeAnswer}"
             );
 
-            // if (!wordMatch.Success)
-            // {
-            //     throw new InvalidOperationException(
-            //         "The model did not return a valid object name."
-            //     );
-            // }
+            Match wordMatch = Regex.Match(
+                completeAnswer,
+                @"[A-Za-z]+"
+            );
+
+            if (!wordMatch.Success)
+            {
+                throw new InvalidOperationException(
+                    "The model did not return a valid object name."
+                );
+            }
 
             return completeAnswer.ToLowerInvariant();
         }
