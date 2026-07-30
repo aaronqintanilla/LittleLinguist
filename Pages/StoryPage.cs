@@ -22,6 +22,8 @@ FALTA:
 1. elegir pregunta ¿aleatoriamente? e ir a esa página (hacer el next button) -> cambiar según la competencia
 2. cambiar el diseño de la interfaz
 3. que cada vez que se vuelva a esta pagina le pida mas texto al StoryGenerator
+4. al hacer finish, que vuelva a HomePage y se reinicie todo
+5. la barra no deja ver todo el texto, no baja del todo
 */
 
 public class StoryPage : ContentPage
@@ -36,6 +38,8 @@ public class StoryPage : ContentPage
 
     public StoryPage()
     {
+        NavigationPage.SetHasBackButton(this, false);
+        
         // Grid principal
         var grid = new Grid();
         grid.Margin = new Thickness(25);
@@ -115,16 +119,6 @@ public class StoryPage : ContentPage
 
         StoryGenerator.Instance.SentencesChanged += OnSentencesChanged;
         SpeechReader.Instance.SentenceChanged += OnSpeakingSentenceChanged;
-
-        DetachedFromVisualTree += (_, _) =>
-        {
-            Console.WriteLine(">>> StoryPage detached");
-            
-            StoryGenerator.Instance.SentencesChanged -= OnSentencesChanged;
-            SpeechReader.Instance.SentenceChanged -= OnSpeakingSentenceChanged;
-
-            StoryGenerator.Instance.StopStory();
-        };
     }
 
     // Vuelve a la página anterior (Home)
@@ -171,12 +165,12 @@ public class StoryPage : ContentPage
 
         Console.WriteLine($"Selected word: {randomWord}");
 
-        await Navigation.PushAsync(new WritingPage(randomWord));
+        await Navigation.PushAsync(new WritingPage(randomWord, StartStory));
     }
 
     public async void StartStory()
     {
-        await StoryGenerator.Instance.WriteStory(storyText);
+        await Session.Instance.WriteNextPart();
     }
 
     // Alterna entre reproducir y pausar el audio
@@ -225,9 +219,13 @@ public class StoryPage : ContentPage
 
         foreach (string sentence in _sentences)
         {
+            string text = sentence.TrimEnd();
+
             bool isSpeaking = sentence == _speakingSentence;
 
-            storyText.Inlines.Add(new Run(sentence + " ")
+            string separator = sentence.EndsWith("\n") ? "\n\n" : " ";
+
+            storyText.Inlines.Add(new Run(text + separator)
             {
                 Foreground = isSpeaking
                     ? new SolidColorBrush(Color.Parse("#872589"))
@@ -236,5 +234,13 @@ public class StoryPage : ContentPage
                 FontWeight = isSpeaking ? FontWeight.Bold : FontWeight.Normal
             });
         }
+    }
+
+    public void Cleanup()
+    {
+        StoryGenerator.Instance.SentencesChanged -= OnSentencesChanged;
+        SpeechReader.Instance.SentenceChanged -= OnSpeakingSentenceChanged;
+
+        StoryGenerator.Instance.StopStory();
     }
 }

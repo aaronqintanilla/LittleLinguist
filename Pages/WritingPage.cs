@@ -4,16 +4,28 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using LittleLinguist.Controls;
+using System.Threading.Tasks;
+using System;
 
 namespace LittleLinguist.Pages;
+
+/*
+FALTA:
+1. al hacer finish (añadir boton para cerrar sesion de aprendizaje), que vuelva a HomePage y se reinicie todo
+2. cambiar el diseño ajustandolo al resto
+*/
 
 public class WritingPage : ContentPage
 {
     private readonly TracingCanvas _tracingCanvas;
     private readonly TextBlock _feedbackText;
+    private readonly Action? _onCompleted;
 
-    public WritingPage(string word = "APPLE")
+    public WritingPage(string word = "APPLE", Action? onCompleted = null)
     {
+        _onCompleted = onCompleted;
+        NavigationPage.SetHasBackButton(this, false);
+
         // ---------------------------------------------------------
         // TÍTULO
         // ---------------------------------------------------------
@@ -178,11 +190,19 @@ public class WritingPage : ContentPage
 
         if (score >= 0.80)
         {
-            // La palabra está bien: volvemos a la historia.
+            _feedbackText.Text = $"✅ Great job! Score: {score:P0}";
+            await Task.Delay(1200);
+
+            _feedbackText.Text = "📖 Back to the story...";
+            await Task.Delay(800);
+
             if (Navigation is not null)
             {
                 await Navigation.PopAsync();
             }
+
+            // La historia continúa. Sin await: no bloqueamos la vuelta.
+            _onCompleted?.Invoke();
         }
         else
         {

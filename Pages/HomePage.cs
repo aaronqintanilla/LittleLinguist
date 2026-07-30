@@ -77,19 +77,19 @@ public class HomePage : ContentPage
         // startButton.Click += StartButton_Click;
 
         // ---------------------------------------------------------
-// BOTÓN STORY
-// ---------------------------------------------------------
+        // BOTÓN STORY
+        // ---------------------------------------------------------
 
-    var storyButton = new Button
-    {
-        Content = "Create a story",
-        FontSize = 20,
-        Padding = new Thickness(30, 14),
-        HorizontalAlignment = HorizontalAlignment.Stretch,
-        HorizontalContentAlignment = HorizontalAlignment.Center
-    };
+        var storyButton = new Button
+        {
+            Content = "Create a story",
+            FontSize = 20,
+            Padding = new Thickness(30, 14),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Center
+        };
 
-    storyButton.Click += StoryButton_Click;
+        storyButton.Click += StoryButton_Click;
 
         // ---------------------------------------------------------
         // PANEL CENTRAL
@@ -137,18 +137,6 @@ public class HomePage : ContentPage
         }
     }
 
-    // Abre la página para practicar escritura.
-    // private async void StartButton_Click(
-    //     object? sender,
-    //     RoutedEventArgs e)
-    // {
-    //     if (Navigation is not null)
-    //     {
-    //         await Navigation.PushAsync(
-    //             new WritingPage("APPLE")
-    //         );
-    // }
-
   private async void StoryButton_Click(
     object? sender,
     RoutedEventArgs e)
@@ -160,29 +148,15 @@ public class HomePage : ContentPage
 
         if(storyPage == null)
             {
+                Session.Instance.Reset();
                 storyPage = new StoryPage();
                 storyPage.StartStory();
             }
 
             if (Navigation is not null)
             {
-                // De momento también abre SettingsPage.
                 await Navigation.PushAsync(storyPage);
             }
     }
 
-    
-
-    private async void WritingButton_Click(
-        object? sender,
-        RoutedEventArgs e)
-    {
-
-        if (Navigation is not null)
-        {
-            await Navigation.PushAsync(
-                new WritingPage("APPLE")
-            );
-        }
-    }
 }
