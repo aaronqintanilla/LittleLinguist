@@ -29,6 +29,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Themes.Fluent;
 using LittleLinguist.Controls;
+using LittleLinguist.Pages;
 using HomePage = LittleLinguist.Pages.HomePage;
 
 /*
@@ -55,17 +56,16 @@ class Program
     {
         app.Styles.Add(new FluentTheme());
 
-        /*var window = new Window
+        var window = new Window
         {
             Title = "Little Linguist",
             Width = 800,
             Height = 600
-        };*/
-
-        var window = new Window
-        {
-            Content = new Touch()
         };
+
+        var navigationPage = new NavigationPage();
+        navigationPage.Content = new TouchscreenPage();
+        window.Content = navigationPage;
 
         /*var homePage = new HomePage();
         var navigationPage = new NavigationPage();
