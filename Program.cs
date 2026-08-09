@@ -96,7 +96,7 @@ class Program
         if(e.Pointer.Type == PointerType.Mouse)
         {
             if (window is null) return;
-            window.Cursor = new Cursor(StandardCursorType.Arrow);
+           // window.Cursor = new Cursor(StandardCursorType.Arrow);
         }
     }
 }
