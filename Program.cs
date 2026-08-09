@@ -63,13 +63,13 @@ class Program
             Height = 600
         };
 
-        var navigationPage = new NavigationPage();
-        navigationPage.Content = new TouchscreenPage();
-        window.Content = navigationPage;
-
-        /*var homePage = new HomePage();
+        var homePage = new HomePage();
         var navigationPage = new NavigationPage();
         navigationPage.Content = homePage;
+        foreach(Avalonia.Input.GestureRecognizers.SwipeGestureRecognizer gr in navigationPage.GestureRecognizers)
+        {
+            gr.CanHorizontallySwipe = false;
+        }
         window.Content = navigationPage;
         await StoryGenerator.Instance.LoadModel();
 
@@ -77,7 +77,7 @@ class Program
         {
             StoryGenerator.Instance.StopStory();
             SpeechReader.Instance.Dispose();
-        };*/
+        };
 
         window.Show();
         app.Run(window);
