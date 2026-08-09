@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Themes.Fluent;
+using LittleLinguist.Controls;
 using HomePage = LittleLinguist.Pages.HomePage;
 
 /*
@@ -54,14 +55,19 @@ class Program
     {
         app.Styles.Add(new FluentTheme());
 
-        var window = new Window
+        /*var window = new Window
         {
             Title = "Little Linguist",
             Width = 800,
             Height = 600
+        };*/
+
+        var window = new Window
+        {
+            Content = new Touch()
         };
 
-        var homePage = new HomePage();
+        /*var homePage = new HomePage();
         var navigationPage = new NavigationPage();
         navigationPage.Content = homePage;
         window.Content = navigationPage;
@@ -71,7 +77,7 @@ class Program
         {
             StoryGenerator.Instance.StopStory();
             SpeechReader.Instance.Dispose();
-        };
+        };*/
 
         window.Show();
         app.Run(window);
