@@ -216,7 +216,7 @@ public class TracingCanvas : Control
 
         // Seguimos recibiendo eventos aunque el puntero
         // se desplace fuera del control.
-        e.Pointer.Capture(this);
+        //e.Pointer.Capture(this);
 
         e.Handled = true;
 
