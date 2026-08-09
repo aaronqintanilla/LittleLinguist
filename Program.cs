@@ -44,8 +44,6 @@ FALTA:
 
 class Program
 {
-    static Window? window;
-
     public static void Main(string[] args)
     {
         AppBuilder.Configure<Application>()
@@ -57,19 +55,12 @@ class Program
     {
         app.Styles.Add(new FluentTheme());
 
-        window = new Window
+        var window = new Window
         {
             Title = "Little Linguist",
             Width = 800,
             Height = 600,
-            Cursor = new Cursor(StandardCursorType.None)
         };
-
-        window.AddHandler(
-            InputElement.PointerMovedEvent,
-            OnPointerMoved,
-            Avalonia.Interactivity.RoutingStrategies.Bubble | Avalonia.Interactivity.RoutingStrategies.Tunnel
-        );
 
         var homePage = new HomePage();
         var navigationPage = new NavigationPage();
@@ -89,14 +80,5 @@ class Program
 
         window.Show();
         app.Run(window);
-    }
-    
-    private static void OnPointerMoved(object? sender, PointerEventArgs e)
-    {
-        if(e.Pointer.Type == PointerType.Mouse)
-        {
-            if (window is null) return;
-           // window.Cursor = new Cursor(StandardCursorType.Arrow);
-        }
     }
 }
