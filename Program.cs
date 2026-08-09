@@ -42,6 +42,11 @@ class Program
     {
         AppBuilder.Configure<Application>()
                   .UsePlatformDetect()
+                  .With(new X11PlatformOptions
+                  {
+                      // Fuerza a Avalonia a usar su propio detector touch
+                      EnableMultiTouch = true
+                  })
                   .Start(AppMain, args);
     }
 
