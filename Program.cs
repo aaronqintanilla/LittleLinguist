@@ -24,10 +24,16 @@ class Program
 }
 
 */
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Input.GestureRecognizers;
 using Avalonia.Themes.Fluent;
+using LittleLinguist.Controls;
+using LittleLinguist.Pages;
 using HomePage = LittleLinguist.Pages.HomePage;
 
 /*
@@ -53,12 +59,16 @@ class Program
         {
             Title = "Little Linguist",
             Width = 800,
-            Height = 600
+            Height = 600,
         };
 
         var homePage = new HomePage();
         var navigationPage = new NavigationPage();
         navigationPage.Content = homePage;
+        foreach (SwipeGestureRecognizer gr in navigationPage.GestureRecognizers.Cast<SwipeGestureRecognizer>())
+        {
+            gr.CanHorizontallySwipe = false;
+        }
         window.Content = navigationPage;
         await StoryGenerator.Instance.LoadModel();
 

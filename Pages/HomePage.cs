@@ -147,16 +147,16 @@ public class HomePage : ContentPage
         }
 
         if(storyPage == null)
-            {
-                Session.Instance.Reset();
-                storyPage = new StoryPage();
-                storyPage.StartStory();
-            }
+        {
+            Session.Instance.Reset();
+            storyPage = new StoryPage();
+            storyPage.StartStory();
+        }
 
-            if (Navigation is not null)
-            {
-                await Navigation.PushAsync(storyPage);
-            }
+        if (Navigation is not null)
+        {
+            await Navigation.PushAsync(storyPage);
+        }
     }
 
 }
