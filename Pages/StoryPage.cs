@@ -165,7 +165,8 @@ public class StoryPage : ContentPage
 
         Console.WriteLine($"Selected word: {randomWord}");
 
-        await Navigation.PushAsync(new WritingPage(randomWord, StartStory));
+        //await Navigation.PushAsync(new WritingPage(randomWord, StartStory));
+        await Navigation.PushAsync(new TouchscreenPage());
     }
 
     public async void StartStory()

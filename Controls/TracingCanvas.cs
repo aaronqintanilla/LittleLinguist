@@ -183,6 +183,7 @@ public class TracingCanvas : Control
 
         Console.WriteLine(
             $"PRESS | Type={e.Pointer.Type} | " +
+            $"Id={e.Pointer.Id} | " +
             $"Position=({position.X:F1}, {position.Y:F1})");
 
         if (Bounds.Width <= 0 || Bounds.Height <= 0)
@@ -216,7 +217,7 @@ public class TracingCanvas : Control
 
         // Seguimos recibiendo eventos aunque el puntero
         // se desplace fuera del control.
-        //e.Pointer.Capture(this);
+        e.Pointer.Capture(this);
 
         e.Handled = true;
 
@@ -230,6 +231,7 @@ public class TracingCanvas : Control
         var position = e.GetPosition(this);
         Console.WriteLine(
         $"MOVE | Type={e.Pointer.Type} | " +
+        $"Id={e.Pointer.Id} | " +
         $"Position=({position.X:F1}, {position.Y:F1}) | " +
         $"Drawing={_isDrawing} | " +
         $"Points={_currentStroke?.Count ?? 0}");
@@ -289,6 +291,7 @@ public class TracingCanvas : Control
     {
         Console.WriteLine(
             $"RELEASE | Type={e.Pointer.Type} | " +
+            $"Id={e.Pointer.Id} | " +
             $"Points={_currentStroke?.Count ?? 0}");
 
         _isDrawing = false;
