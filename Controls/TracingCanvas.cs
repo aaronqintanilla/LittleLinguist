@@ -178,14 +178,6 @@ public class TracingCanvas : Control
         object? sender,
         PointerPressedEventArgs e)
     {
-
-        var position = e.GetPosition(this);
-
-        Console.WriteLine(
-            $"PRESS | Type={e.Pointer.Type} | " +
-            $"Id={e.Pointer.Id} | " +
-            $"Position=({position.X:F1}, {position.Y:F1})");
-
         if (Bounds.Width <= 0 || Bounds.Height <= 0)
         {
             return;
@@ -228,14 +220,6 @@ public class TracingCanvas : Control
         object? sender,
         PointerEventArgs e)
     {
-        var position = e.GetPosition(this);
-        Console.WriteLine(
-        $"MOVE | Type={e.Pointer.Type} | " +
-        $"Id={e.Pointer.Id} | " +
-        $"Position=({position.X:F1}, {position.Y:F1}) | " +
-        $"Drawing={_isDrawing} | " +
-        $"Points={_currentStroke?.Count ?? 0}");
-
         if (!_isDrawing || _currentStroke is null)
         {
             return;
@@ -289,11 +273,6 @@ public class TracingCanvas : Control
         object? sender,
         PointerReleasedEventArgs e)
     {
-        Console.WriteLine(
-            $"RELEASE | Type={e.Pointer.Type} | " +
-            $"Id={e.Pointer.Id} | " +
-            $"Points={_currentStroke?.Count ?? 0}");
-
         _isDrawing = false;
         _currentStroke = null;
 
