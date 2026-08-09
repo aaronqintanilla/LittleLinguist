@@ -24,9 +24,13 @@ class Program
 }
 
 */
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Input.GestureRecognizers;
 using Avalonia.Themes.Fluent;
 using LittleLinguist.Controls;
 using LittleLinguist.Pages;
@@ -40,15 +44,12 @@ FALTA:
 
 class Program
 {
+    static Window? window;
+
     public static void Main(string[] args)
     {
         AppBuilder.Configure<Application>()
                   .UsePlatformDetect()
-                  .With(new X11PlatformOptions
-                  {
-                      // Fuerza a Avalonia a usar su propio detector touch
-                      EnableMultiTouch = true
-                  })
                   .Start(AppMain, args);
     }
 
@@ -56,17 +57,24 @@ class Program
     {
         app.Styles.Add(new FluentTheme());
 
-        var window = new Window
+        window = new Window
         {
             Title = "Little Linguist",
             Width = 800,
-            Height = 600
+            Height = 600,
+            Cursor = new Cursor(StandardCursorType.None)
         };
+
+        window.AddHandler(
+            InputElement.PointerMovedEvent,
+            OnPointerMoved,
+            Avalonia.Interactivity.RoutingStrategies.Bubble | Avalonia.Interactivity.RoutingStrategies.Tunnel
+        );
 
         var homePage = new HomePage();
         var navigationPage = new NavigationPage();
         navigationPage.Content = homePage;
-        foreach(Avalonia.Input.GestureRecognizers.SwipeGestureRecognizer gr in navigationPage.GestureRecognizers)
+        foreach (SwipeGestureRecognizer gr in navigationPage.GestureRecognizers.Cast<SwipeGestureRecognizer>())
         {
             gr.CanHorizontallySwipe = false;
         }
@@ -81,5 +89,14 @@ class Program
 
         window.Show();
         app.Run(window);
+    }
+    
+    private static void OnPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if(e.Pointer.Type == PointerType.Mouse)
+        {
+            if (window is null) return;
+            window.Cursor = new Cursor(StandardCursorType.Arrow);
+        }
     }
 }
