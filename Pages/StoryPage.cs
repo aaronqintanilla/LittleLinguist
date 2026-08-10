@@ -33,6 +33,8 @@ public class StoryPage : ContentPage
     // Botón Play
     Button playButton = new Button();
 
+    int cont = 0;
+
     public StoryPage()
     {
         // Grid principal
@@ -160,6 +162,8 @@ public class StoryPage : ContentPage
     Console.WriteLine($"Selected word: {randomWord}");
 
     await Navigation.PushAsync(
+        //if (cont % 2 == 0) new WritingPage(randomWord);
+        //else new SpeechPage(randomWord);
         new WritingPage(randomWord)
     );
 

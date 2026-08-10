@@ -47,12 +47,12 @@ public class VisionEngine : IDisposable
 
         string modelPath = Path.Combine(
             modelsFolder,
-            "fastvlm-0.5b-q4_0.gguf"
+            "SmolVLM-256M-Instruct-Q8_0.gguf"
         );
 
         string mmprojPath = Path.Combine(
             modelsFolder,
-            "fastvlm-0.5b-q4_0.gguf"
+            "mmproj-SmolVLM-256M-Instruct-Q8_0.gguf"
         );
 
         if (!File.Exists(modelPath))
