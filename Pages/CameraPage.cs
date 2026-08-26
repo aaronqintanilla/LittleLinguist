@@ -225,7 +225,7 @@ public class CameraPage : ContentPage
             // Por ejemplo, podrías navegar a otra página o realizar alguna acción con la foto tomada.
             var photoStoryPage = new PhotoStoryPage();
             using var memoryStream = new MemoryStream();
-            (_photo.Source as Bitmap)?.Save(memoryStream);
+            (_photo.Source as Bitmap)?.Save(memoryStream, PngBitmapEncoderOptions.Default);
             byte[] imageData = memoryStream.ToArray();
             photoStoryPage.StartStory(imageData);
 

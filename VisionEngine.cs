@@ -165,7 +165,17 @@ public class VisionEngine : IDisposable
 
         try
         {
+            Console.WriteLine(
+                $"Embeds before reset: {_executor.Embeds.Count}"
+            );
+
             ClearPreviousImage();
+            ResetInference();
+
+            Console.WriteLine(
+                $"Embeds after reset: {_executor.Embeds.Count}"
+            );
+
             // Convierte la imagen en información que entiende
             // el modelo multimodal.
             var imageEmbed =
@@ -177,7 +187,7 @@ public class VisionEngine : IDisposable
                 $"{_mediaMarker}\n" +
                 "Identify the main physical object in this image. " +
                 "Answer with only one simple English noun. " +
-                "Do not write a sentence or explanation.";
+                "Output nothing else.";
 
             string prompt =
                 CreatePrompt(userMessage);
@@ -185,12 +195,12 @@ public class VisionEngine : IDisposable
             var inferenceParameters =
                 new InferenceParams
                 {
-                    MaxTokens = 512,
+                    MaxTokens = 12,
 
                     SamplingPipeline =
                         new DefaultSamplingPipeline
                         {
-                            Temperature = 0.6f
+                            Temperature = 0.4f
                         }
                 };
 
@@ -225,7 +235,7 @@ public class VisionEngine : IDisposable
                 );
             }
 
-            return completeAnswer.ToLowerInvariant();
+            return wordMatch.Value.ToLowerInvariant();
         }
         finally
         {
@@ -302,6 +312,16 @@ public class VisionEngine : IDisposable
         _executor.Embeds.Clear();
 
         // Limpia los datos multimedia anteriores.
+        _visionModel.ClearMedia();
+    }
+
+    private void ResetInference()
+    {
+        if (_context is null || _visionModel is null)
+            return;
+
+        _context.NativeHandle.MemoryClear();
+        _executor = new InteractiveExecutor(_context, _visionModel);
         _visionModel.ClearMedia();
     }
 

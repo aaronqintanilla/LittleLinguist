@@ -160,12 +160,13 @@ public class StoryPage : ContentPage
         words[Random.Shared.Next(words.Count)];
 
     Console.WriteLine($"Selected word: {randomWord}");
+    
+    ContentPage page;
 
-    await Navigation.PushAsync(
-        //if (cont % 2 == 0) new WritingPage(randomWord);
-        //else new SpeechPage(randomWord);
-        new WritingPage(randomWord)
-    );
+    if (cont % 2 == 0) page = new WritingPage(randomWord);
+    else page = new SpeechPage(randomWord);
+    cont++;
+    await Navigation.PushAsync(page);
 
     }
 
