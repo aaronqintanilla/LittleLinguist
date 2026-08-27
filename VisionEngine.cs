@@ -8,6 +8,14 @@ using LLama;
 using LLama.Common;
 using LLama.Native;
 using LLama.Sampling;
+using Llama.Grammar;
+using Llama.Grammar.Service;
+
+public class Character
+{
+    public string Name { get; set; } = String.Empty;
+    public string Description { get; set; } = String.Empty;
+}
 
 public class VisionEngine : IDisposable
 {
@@ -23,6 +31,14 @@ public class VisionEngine : IDisposable
 
     // Evita analizar dos imágenes simultáneamente.
     private readonly SemaphoreSlim _lock = new(1, 1);
+
+    // Forces a specific structure for the generated text: name of object & description
+    public string GetCharacterGrammar()
+    {
+        var grammar = new GbnfGrammar();
+        var gbnf = grammar.ConvertTypeToGbnf<Character>();
+        return gbnf;
+    }
 
     private VisionEngine()
     {
@@ -47,12 +63,12 @@ public class VisionEngine : IDisposable
 
         string modelPath = Path.Combine(
             modelsFolder,
-            "SmolVLM-256M-Instruct-Q8_0.gguf"
+            "SmolVLM2-2.2B-Instruct-Q8_0.gguf"
         );
 
         string mmprojPath = Path.Combine(
             modelsFolder,
-            "mmproj-SmolVLM-256M-Instruct-Q8_0.gguf"
+            "mmproj-SmolVLM2-2.2B-Instruct-Q8_0.gguf"
         );
 
         if (!File.Exists(modelPath))
@@ -121,7 +137,7 @@ public class VisionEngine : IDisposable
                 "The loaded model does not support images."
             );
         }
-        else 
+        else
         {
             Console.WriteLine(
                 "Vision model supports images."
@@ -170,7 +186,6 @@ public class VisionEngine : IDisposable
             );
 
             ClearPreviousImage();
-            ResetInference();
 
             Console.WriteLine(
                 $"Embeds after reset: {_executor.Embeds.Count}"
@@ -182,12 +197,10 @@ public class VisionEngine : IDisposable
                 _visionModel.LoadMedia(imageData);
 
             _executor.Embeds.Add(imageEmbed);
-
+            
             string userMessage =
                 $"{_mediaMarker}\n" +
-                "Identify the main physical object in this image. " +
-                "Answer with only one simple English noun. " +
-                "Output nothing else.";
+                "Identify the main physical object. Then describe only that object briefly. Ignore people, hands, clothing and background. Use no more than 20 words for the description.";
 
             string prompt =
                 CreatePrompt(userMessage);
@@ -195,13 +208,14 @@ public class VisionEngine : IDisposable
             var inferenceParameters =
                 new InferenceParams
                 {
-                    MaxTokens = 12,
+                    MaxTokens = 64,
 
                     SamplingPipeline =
                         new DefaultSamplingPipeline
                         {
-                            Temperature = 0.4f
-                        }
+                            Grammar = new Grammar(GetCharacterGrammar(), "root"),
+                            Temperature = 0.0f
+                        },
                 };
 
             var answer = new StringBuilder();
@@ -223,19 +237,7 @@ public class VisionEngine : IDisposable
                 $"Vision raw response: {completeAnswer}"
             );
 
-            Match wordMatch = Regex.Match(
-                completeAnswer,
-                @"[A-Za-z]+"
-            );
-
-            if (!wordMatch.Success)
-            {
-                throw new InvalidOperationException(
-                    "The model did not return a valid object name."
-                );
-            }
-
-            return wordMatch.Value.ToLowerInvariant();
+            return completeAnswer;
         }
         finally
         {
@@ -311,17 +313,9 @@ public class VisionEngine : IDisposable
 
         _executor.Embeds.Clear();
 
-        // Limpia los datos multimedia anteriores.
-        _visionModel.ClearMedia();
-    }
-
-    private void ResetInference()
-    {
-        if (_context is null || _visionModel is null)
-            return;
-
-        _context.NativeHandle.MemoryClear();
         _executor = new InteractiveExecutor(_context, _visionModel);
+
+        // Limpia los datos multimedia anteriores.
         _visionModel.ClearMedia();
     }
 
