@@ -1,8 +1,39 @@
-﻿using System;
+﻿/* using Avalonia;
+using System;
+
+namespace LittleLinguist;
+
+class Program
+{
+    // Initialization code. Don't use any Avalonia, third-party APIs or any
+    // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
+    // yet and stuff might break.
+    [STAThread]
+    public static void Main(string[] args) => BuildAvaloniaApp()
+        .StartWithClassicDesktopLifetime(args);
+
+    // Avalonia configuration, don't remove; also used by visual designer.
+    public static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<App>()
+            .UsePlatformDetect()
+#if DEBUG
+            .WithDeveloperTools()
+#endif
+            .WithInterFont()
+            .LogToTrace();
+}
+
+*/
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Input.GestureRecognizers;
 using Avalonia.Themes.Fluent;
+using LittleLinguist.Controls;
+using LittleLinguist.Pages;
 using HomePage = LittleLinguist.Pages.HomePage;
 
 class Program
@@ -26,14 +57,16 @@ class Program
         {
             Title = "Little Linguist",
             Width = 800,
-            Height = 600
+            Height = 600,
         };
 
-        var navigationPage = new NavigationPage
+        var homePage = new HomePage();
+        var navigationPage = new NavigationPage();
+        navigationPage.Content = homePage;
+        foreach (SwipeGestureRecognizer gr in navigationPage.GestureRecognizers.Cast<SwipeGestureRecognizer>())
         {
-            Content = new HomePage()
-        };
-
+            gr.CanHorizontallySwipe = false;
+        }
         window.Content = navigationPage;
 
         window.Closed += (_, _) =>

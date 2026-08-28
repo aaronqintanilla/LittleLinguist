@@ -12,6 +12,12 @@ using Avalonia.Media;
 
 namespace LittleLinguist.Pages;
 
+/*
+FALTA:
+1. que cambie la pagina hacia la que se mueve según las competencias
+2. cambiar el diseño de la interfaz
+*/
+
 public class HomePage : ContentPage
 {
     private SettingsPage? settingsPage;
@@ -78,8 +84,8 @@ public class HomePage : ContentPage
         // startButton.Click += StartButton_Click;
 
         // ---------------------------------------------------------
-// BOTÓN STORY
-// ---------------------------------------------------------
+        // BOTÓN STORY
+        // ---------------------------------------------------------
 
     var storyButton = new Button
     {
@@ -90,7 +96,7 @@ public class HomePage : ContentPage
         HorizontalContentAlignment = HorizontalAlignment.Center
     };
 
-    storyButton.Click += StoryButton_Click;
+        storyButton.Click += StoryButton_Click;
 
     var visionButton = new Button
     {
@@ -150,18 +156,6 @@ public class HomePage : ContentPage
         }
     }
 
-    // Abre la página para practicar escritura.
-    // private async void StartButton_Click(
-    //     object? sender,
-    //     RoutedEventArgs e)
-    // {
-    //     if (Navigation is not null)
-    //     {
-    //         await Navigation.PushAsync(
-    //             new WritingPage("APPLE")
-    //         );
-    // }
-
   private async void StoryButton_Click(
     object? sender,
     RoutedEventArgs e)
@@ -172,33 +166,17 @@ public class HomePage : ContentPage
         }
 
         if(storyPage == null)
-            {
-                storyPage = new StoryPage();
-                storyPage.StartStory();
-            }
-
-            if (Navigation is not null)
-            {
-                // De momento también abre SettingsPage.
-                await Navigation.PushAsync(storyPage);
-            }
-    }
-
-    
-
-    private async void WritingButton_Click(
-        object? sender,
-        RoutedEventArgs e)
-    {
+        {
+            Session.Instance.Reset();
+            storyPage = new StoryPage();
+            storyPage.StartStory();
+        }
 
         if (Navigation is not null)
         {
-            await Navigation.PushAsync(
-                new WritingPage("APPLE")
-            );
+            await Navigation.PushAsync(storyPage);
         }
     }
-
 
     private async void VisionButton_Click(
             object? sender,
