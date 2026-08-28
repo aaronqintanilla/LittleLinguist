@@ -1,3 +1,9 @@
+using System;
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -16,6 +22,7 @@ public class HomePage : ContentPage
 {
     private SettingsPage? settingsPage;
     private StoryPage? storyPage;
+    private PhotoStoryPage? PhotoStoryPage;
 
     public HomePage()
     {
@@ -80,16 +87,27 @@ public class HomePage : ContentPage
         // BOTÓN STORY
         // ---------------------------------------------------------
 
-        var storyButton = new Button
-        {
-            Content = "Create a story",
-            FontSize = 20,
-            Padding = new Thickness(30, 14),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Center
-        };
+    var storyButton = new Button
+    {
+        Content = "Story Adventure",
+        FontSize = 20,
+        Padding = new Thickness(30, 14),
+        HorizontalAlignment = HorizontalAlignment.Stretch,
+        HorizontalContentAlignment = HorizontalAlignment.Center
+    };
 
         storyButton.Click += StoryButton_Click;
+
+    var visionButton = new Button
+    {
+        Content = "Photo Adventure",
+        FontSize = 20,
+        Padding = new Thickness(30, 14),
+        HorizontalAlignment = HorizontalAlignment.Stretch,
+        HorizontalContentAlignment = HorizontalAlignment.Center
+    };
+
+    visionButton.Click += VisionButton_Click;
 
         // ---------------------------------------------------------
         // PANEL CENTRAL
@@ -105,7 +123,8 @@ public class HomePage : ContentPage
             {
                 title,
                 subtitle,
-                storyButton
+                storyButton,
+                visionButton
             }
         };
 
@@ -159,4 +178,21 @@ public class HomePage : ContentPage
         }
     }
 
+    private async void VisionButton_Click(
+            object? sender,
+            RoutedEventArgs e)
+        {
+            if (Navigation is null)
+        {
+            return;
+        }
+
+        
+        var cameraPage = new CameraPage();
+        await Navigation.PushAsync(
+             cameraPage
+        );
+        await cameraPage.UpdateCameraPreview();
+    }
 }
+

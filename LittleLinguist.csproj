@@ -15,8 +15,13 @@
       <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Llama.Grammar" Version="1.0.5" />
+    <PackageReference Include="OpenCvSharp4.runtime.osx_arm64" Version="4.8.1-rc" />
+    <PackageReference Include="Vosk" Version="0.3.38" />
     <PackageReference Include="LLamaSharp" Version="0.27.0" />
     <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.27.0" />
+    <PackageReference Include="OpenCvSharp4" Version="4.13.0.20260627" />
+    <PackageReference Include="OpenCvSharp4.official.runtime.linux-x64" Version="4.13.0.20260627" />
   </ItemGroup>
 
   <ItemGroup>

@@ -36,22 +36,20 @@ using LittleLinguist.Controls;
 using LittleLinguist.Pages;
 using HomePage = LittleLinguist.Pages.HomePage;
 
-/*
-FALTA:
-1. quitar el comentario de arriba
-2. comentar las clases y los métodos de "todos" los archivos
-*/
-
 class Program
 {
+    [STAThread]
     public static void Main(string[] args)
     {
         AppBuilder.Configure<Application>()
-                  .UsePlatformDetect()
-                  .Start(AppMain, args);
+            .UsePlatformDetect()
+            .Start(AppMain, args);
     }
 
-    static async void AppMain(Application app, string[] args)
+    // Este método ya no es async.
+    private static void AppMain(
+        Application app,
+        string[] args)
     {
         app.Styles.Add(new FluentTheme());
 
@@ -70,15 +68,45 @@ class Program
             gr.CanHorizontallySwipe = false;
         }
         window.Content = navigationPage;
-        await StoryGenerator.Instance.LoadModel();
 
         window.Closed += (_, _) =>
         {
             StoryGenerator.Instance.StopStory();
+            VisionEngine.Instance.Dispose();
             SpeechReader.Instance.Dispose();
         };
 
+        // Primero mostramos la ventana.
         window.Show();
+
+        // Empezamos la carga sin detener el arranque de Avalonia.
+        _ = LoadModelsAsync();
+
+        // Iniciamos el bucle de la aplicación.
         app.Run(window);
+    }
+
+    private static async Task LoadModelsAsync()
+    {
+        try
+        {
+            
+            await StoryGenerator.Instance.LoadModel();
+            await VisionEngine.Instance.LoadModel();
+
+            Console.WriteLine(
+                "Vision model completely loaded."
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(
+                "VISION MODEL ERROR:"
+            );
+
+            Console.Error.WriteLine(
+                ex.ToString()
+            );
+        }
     }
 }

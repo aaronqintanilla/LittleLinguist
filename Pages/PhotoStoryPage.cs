@@ -14,32 +14,27 @@ using Avalonia.Controls.Primitives;
 using System.Linq;
 using System.Text.RegularExpressions;
 namespace LittleLinguist.Pages;
-using Avalonia.Controls.Documents;
-using Avalonia.Threading;
+
 
 /*
 FALTA:
-1. elegir pregunta ¿aleatoriamente? e ir a esa página (hacer el next button) -> cambiar según la competencia
-2. cambiar el diseño de la interfaz
-3. que cada vez que se vuelva a esta pagina le pida mas texto al StoryGenerator
-4. al hacer finish, que vuelva a HomePage y se reinicie todo
-5. la barra no deja ver todo el texto, no baja del todo
+1. elegir pregunta ¿aleatoriamente? e ir a esa página (hacer el next button)
+2. arreglar modelo LLM
+- poner modelo LLM en un archivo diferente, compartido por todas las pestañas para que la historia pueda continuar
+- generar historias diferentes, siempre es sobre un pájaro llamado Pip
+3. cambiar el diseño de la interfaz
+4. Si le da a continuar, que deje de leer el texto el SpeechReader
 */
 
-public class StoryPage : ContentPage
+public class PhotoStoryPage : ContentPage
 {
     TextBlock storyText = new TextBlock();
 
     // Botón Play
     Button playButton = new Button();
 
-    private List<string> _sentences = new();
-    private string? _speakingSentence;
-
-    public StoryPage()
+    public PhotoStoryPage()
     {
-        NavigationPage.SetHasBackButton(this, false);
-        
         // Grid principal
         var grid = new Grid();
         grid.Margin = new Thickness(25);
@@ -49,6 +44,7 @@ public class StoryPage : ContentPage
         grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
 
         // Texto de la historia
+        storyText.Text = "";
         storyText.TextWrapping = TextWrapping.Wrap;
         storyText.FontSize = 18;
 
@@ -116,9 +112,6 @@ public class StoryPage : ContentPage
         grid.Children.Add(buttonPanel);
 
         Content = grid;
-
-        StoryGenerator.Instance.SentencesChanged += OnSentencesChanged;
-        SpeechReader.Instance.SentenceChanged += OnSpeakingSentenceChanged;
     }
 
     // Vuelve a la página anterior (Home)
@@ -130,51 +123,55 @@ public class StoryPage : ContentPage
         }
     }
 
-    // Pasa a la siguiente página con una palabra de la historia
+    // Pasa a la siguiente página
     private async void NextButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (Navigation is null)
-        {
-            return;
-        }
-
-        // Guardamos el texto antes de parar, porque StopStory
-        // vacía la lista de frases.
-        string story = string.Join(" ", _sentences);
-
-        // Detiene la generación y la lectura.
+        //await Navigation.PopAsync();
+        //await Navigation.PushAsync(new FALTANOMBRE());
         StoryGenerator.Instance.StopStory();
         SpeechReader.Instance.Pause();
         playButton.Content = "Play";
+        // StoryGenerator.Instance.StopStory()
+    // Detiene la generación y la lectura.
 
-        // Extrae palabras de entre 3 y 10 letras.
-        List<string> words = Regex
-            .Matches(story, @"\b[A-Za-z]{3,10}\b")
-            .Select(match => match.Value)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        if (words.Count == 0)
-        {
-            Console.WriteLine("No words found in the story.");
-            return;
-        }
-
-    Console.WriteLine($"Selected word: {randomWord}");
-    
-    ContentPage page;
-
-    if (cont % 2 == 0) page = new WritingPage(randomWord);
-    else page = new SpeechPage(randomWord);
-    cont++;
-    await Navigation.PushAsync(page);
-
-        await Navigation.PushAsync(new WritingPage(randomWord, StartStory));
+    if (Navigation is null)
+    {
+        return;
     }
 
-    public async void StartStory()
+    string story = storyText.Text ?? "";
+
+    // Extrae palabras de entre 3 y 10 letras.
+    List<string> words = Regex
+        .Matches(story, @"\b[A-Za-z]{3,10}\b")
+        .Select(match => match.Value)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+    if (words.Count == 0)
     {
-        await Session.Instance.WriteNextPart();
+        return;
+    }
+
+    // Elige una palabra aleatoria.
+    string randomWord =
+        words[Random.Shared.Next(words.Count)];
+
+    Console.WriteLine($"Selected word: {randomWord}");
+
+    await Navigation.PushAsync(
+        new WritingPage(randomWord)
+    );
+
+    }
+
+    public async void StartStory(byte[] imageData)
+    {
+        //string respuesta = await VisionEngine.Instance.IdentifyObject(imageData);
+        //storyText.Text = respuesta;
+
+        string objectDescription = await VisionEngine.Instance.IdentifyObject(imageData);
+        await StoryGenerator.Instance.WriteStoryFromCharacter(storyText, objectDescription);
     }
 
     // Alterna entre reproducir y pausar el audio
@@ -198,53 +195,5 @@ public class StoryPage : ContentPage
     private void SpeedSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
         SpeechReader.Instance.SetSpeed((float)(3.0 - e.NewValue));
-    }
-
-    // Llega una nueva lista de frases desde el generador.
-    private void OnSentencesChanged(List<string> sentences)
-    {
-        _sentences = sentences;
-        Dispatcher.UIThread.Post(RefreshStoryText);
-    }
-
-    // Cambia la frase que se está leyendo en voz alta.
-    private void OnSpeakingSentenceChanged(string? sentence)
-    {
-        _speakingSentence = sentence;
-        Dispatcher.UIThread.Post(RefreshStoryText);
-    }
-
-    // Redibuja la historia, resaltando la frase que se está leyendo.
-    private void RefreshStoryText()
-    {
-        if (storyText.Inlines is null) return;
-
-        storyText.Inlines.Clear();
-
-        foreach (string sentence in _sentences)
-        {
-            string text = sentence.TrimEnd();
-
-            bool isSpeaking = sentence == _speakingSentence;
-
-            string separator = sentence.EndsWith("\n") ? "\n\n" : " ";
-
-            storyText.Inlines.Add(new Run(text + separator)
-            {
-                Foreground = isSpeaking
-                    ? new SolidColorBrush(Color.Parse("#872589"))
-                    : Brushes.Black,
-
-                FontWeight = isSpeaking ? FontWeight.Bold : FontWeight.Normal
-            });
-        }
-    }
-
-    public void Cleanup()
-    {
-        StoryGenerator.Instance.SentencesChanged -= OnSentencesChanged;
-        SpeechReader.Instance.SentenceChanged -= OnSpeakingSentenceChanged;
-
-        StoryGenerator.Instance.StopStory();
     }
 }
