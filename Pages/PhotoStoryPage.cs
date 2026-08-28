@@ -167,8 +167,11 @@ public class PhotoStoryPage : ContentPage
 
     public async void StartStory(byte[] imageData)
     {
-        string respuesta = await VisionEngine.Instance.IdentifyObject(imageData);
-        storyText.Text = respuesta;
+        //string respuesta = await VisionEngine.Instance.IdentifyObject(imageData);
+        //storyText.Text = respuesta;
+
+        string objectDescription = await VisionEngine.Instance.IdentifyObject(imageData);
+        await StoryGenerator.Instance.WriteStoryFromCharacter(storyText, objectDescription);
     }
 
     // Alterna entre reproducir y pausar el audio

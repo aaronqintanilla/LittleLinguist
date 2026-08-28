@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using System;
+using System.Collections.Generic;
 using LLama;
 using LLama.Common;
 using LLama.Sampling;
@@ -19,7 +20,13 @@ public class StoryGenerator
     // Cancels the story currently being generated.
     private CancellationTokenSource? _generation;
 
-    private StoryGenerator(){}
+    InteractiveExecutor? executor;
+    
+    void InitSession()
+    {
+        if (executor is null) throw new NullReferenceException("Interactive Executor is null");
+        session = new ChatSession(executor);
+    }
 
     public async Task LoadModel()
     {
@@ -36,14 +43,14 @@ public class StoryGenerator
         var model = LLamaWeights.LoadFromFile(parameters);
 
         var context = model.CreateContext(parameters);
-        var executor = new InteractiveExecutor(context);
-        session = new ChatSession(executor);
+        executor = new InteractiveExecutor(context);
+        InitSession();
 
         inferenceParams = new InferenceParams
         {
             MaxTokens = 400,
-            //AntiPrompts = new List<string> { "<|im_end|>", "<|im_start|>" },
-            SamplingPipeline = new DefaultSamplingPipeline { Temperature = 1.2f, MinP = 0.05f }
+            AntiPrompts = new List<string> {"User:", "<|user|>"},
+            SamplingPipeline = new DefaultSamplingPipeline { Temperature = 1.0f, MinP = 0.05f, RepeatPenalty = 1.3f }
         };
     }
 
@@ -56,6 +63,7 @@ public class StoryGenerator
 
         // Cancel the previous story and stop its audio.
         StopStory();
+        InitSession();
 
         _generation = new CancellationTokenSource();
         CancellationToken token = _generation.Token;
@@ -64,6 +72,55 @@ public class StoryGenerator
         textBlock.Text = "";
 
         string input = "Write exactly the first THREE paragraphs of a children's story. Output only the story. The response must begin with Once upon a time. Do not include introductions, explanations or comments. Write exactly the first three paragraphs of the story. End your response immediately after the third paragraph.";
+
+        string generatedText = "";  //Control
+
+        try
+        {
+            var message = new ChatHistory.Message(AuthorRole.User, input);
+
+            await foreach (var chunk in session.ChatAsync(message, inferenceParams, token))
+            {
+                token.ThrowIfCancellationRequested();
+
+                //Control
+                generatedText += chunk;
+                if (generatedText.Contains("```")) break;
+
+                OnTokenReceived(chunk, textBlock);
+            }
+
+            OnGenerationCompleted();
+        }
+        catch (OperationCanceledException)
+        {
+            // The user moved on to another story. Nothing to report.
+        }
+    }
+
+    public async Task WriteStoryFromCharacter(TextBlock textBlock, string objectDescription)
+    {
+        if (session is null) return;
+
+        // Cancel the previous story and stop its audio.
+        StopStory();
+        InitSession();
+
+        _generation = new CancellationTokenSource();
+        CancellationToken token = _generation.Token;
+
+        _currentSentence.Clear();
+        textBlock.Text = "";
+
+        string input =
+            $"Write a short children's story about this object: {objectDescription}\n\n" +
+            "The object must be the main protagonist.\n" +
+            "Do not write the object description or any kind of introduction.\n" +
+            "The story must be friendly, imaginative and suitable for young children.\n" +
+            "Use exactly 3 paragraphs.\n" +
+            "Use simple language.\n" +
+            "Do not mention that the story was generated from an object description.\n" +
+            "Output only the story. Do not use Markdown or code blocks.";
 
         string generatedText = "";  //Control
 

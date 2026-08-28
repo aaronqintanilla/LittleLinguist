@@ -37,6 +37,10 @@ public class VisionEngine : IDisposable
     {
         var grammar = new GbnfGrammar();
         var gbnf = grammar.ConvertTypeToGbnf<Character>();
+
+        gbnf = gbnf.Replace("(root-Name)?", "root-Name");
+        gbnf = gbnf.Replace("(root-Description)?", "root-Description");
+
         return gbnf;
     }
 
@@ -63,12 +67,12 @@ public class VisionEngine : IDisposable
 
         string modelPath = Path.Combine(
             modelsFolder,
-            "SmolVLM2-2.2B-Instruct-Q8_0.gguf"
+            "SmolVLM-256M-Instruct-Q8_0.gguf"
         );
 
         string mmprojPath = Path.Combine(
             modelsFolder,
-            "mmproj-SmolVLM2-2.2B-Instruct-Q8_0.gguf"
+            "mmproj-SmolVLM-256M-Instruct-Q8_0.gguf"
         );
 
         if (!File.Exists(modelPath))
@@ -200,7 +204,7 @@ public class VisionEngine : IDisposable
             
             string userMessage =
                 $"{_mediaMarker}\n" +
-                "Identify the main physical object. Then describe only that object briefly. Ignore people, hands, clothing and background. Use no more than 20 words for the description.";
+                "Identify the main physical object. Then return a JSON schema with the common English name of the object and a short description with no more than 10 simple words.";
 
             string prompt =
                 CreatePrompt(userMessage);
