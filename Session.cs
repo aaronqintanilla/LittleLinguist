@@ -34,11 +34,11 @@ public class Session
     }
 
     // Generates whichever part comes next.
-    public async Task WriteNextPart()
+    public async Task WriteNextPart(string? objectDescription)
     {
         if (_partsWritten == 0)
         {
-            await StoryGenerator.Instance.WriteIntroduction();
+            await StoryGenerator.Instance.WriteIntroduction(objectDescription);
         }
         else if (_partsWritten <= MiddleCount)
         {

@@ -33,6 +33,7 @@ public class StoryPage : ContentPage
     // Botón Play
     Button playButton = new Button();
 
+    int cont = 0;
     private List<string> _sentences = new();
     private string? _speakingSentence;
 
@@ -160,21 +161,23 @@ public class StoryPage : ContentPage
             return;
         }
 
-    Console.WriteLine($"Selected word: {randomWord}");
-    
-    ContentPage page;
+        string randomWord = words[Random.Shared.Next(words.Count)];
 
-    if (cont % 2 == 0) page = new WritingPage(randomWord);
-    else page = new SpeechPage(randomWord);
-    cont++;
-    await Navigation.PushAsync(page);
+        Console.WriteLine($"Selected word: {randomWord}");
 
-        await Navigation.PushAsync(new WritingPage(randomWord, StartStory));
+        ContentPage page;
+
+        if (cont % 2 == 0) page = new WritingPage(randomWord, StartStory);
+        else page = new SpeechPage(randomWord);
+        cont++;
+        await Navigation.PushAsync(page);
+
+        //BUG: await Navigation.PushAsync(new WritingPage(randomWord, StartStory));
     }
 
     public async void StartStory()
     {
-        await Session.Instance.WriteNextPart();
+        await Session.Instance.WriteNextPart(null);
     }
 
     // Alterna entre reproducir y pausar el audio

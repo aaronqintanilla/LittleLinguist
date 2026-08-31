@@ -14,6 +14,8 @@ using Avalonia.Controls.Primitives;
 using System.Linq;
 using System.Text.RegularExpressions;
 namespace LittleLinguist.Pages;
+using Avalonia.Controls.Documents;
+using Avalonia.Threading;
 
 
 /*
@@ -33,8 +35,14 @@ public class PhotoStoryPage : ContentPage
     // Botón Play
     Button playButton = new Button();
 
+    int cont = 0;
+    private List<string> _sentences = new();
+    private string? _speakingSentence;
+
     public PhotoStoryPage()
     {
+        NavigationPage.SetHasBackButton(this, false);
+        
         // Grid principal
         var grid = new Grid();
         grid.Margin = new Thickness(25);
@@ -44,7 +52,6 @@ public class PhotoStoryPage : ContentPage
         grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
 
         // Texto de la historia
-        storyText.Text = "";
         storyText.TextWrapping = TextWrapping.Wrap;
         storyText.FontSize = 18;
 
@@ -112,6 +119,9 @@ public class PhotoStoryPage : ContentPage
         grid.Children.Add(buttonPanel);
 
         Content = grid;
+
+        StoryGenerator.Instance.SentencesChanged += OnSentencesChanged;
+        SpeechReader.Instance.SentenceChanged += OnSpeakingSentenceChanged;
     }
 
     // Vuelve a la página anterior (Home)
@@ -123,56 +133,69 @@ public class PhotoStoryPage : ContentPage
         }
     }
 
-    // Pasa a la siguiente página
+    // Pasa a la siguiente página con una palabra de la historia
     private async void NextButton_Click(object? sender, RoutedEventArgs e)
     {
-        //await Navigation.PopAsync();
-        //await Navigation.PushAsync(new FALTANOMBRE());
+        if (Navigation is null)
+        {
+            return;
+        }
+
+        // Guardamos el texto antes de parar, porque StopStory
+        // vacía la lista de frases.
+        string story = string.Join(" ", _sentences);
+
+        // Detiene la generación y la lectura.
         StoryGenerator.Instance.StopStory();
         SpeechReader.Instance.Pause();
         playButton.Content = "Play";
-        // StoryGenerator.Instance.StopStory()
-    // Detiene la generación y la lectura.
 
-    if (Navigation is null)
-    {
-        return;
-    }
+        // Extrae palabras de entre 3 y 10 letras.
+        List<string> words = Regex
+            .Matches(story, @"\b[A-Za-z]{3,10}\b")
+            .Select(match => match.Value)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
-    string story = storyText.Text ?? "";
+        if (words.Count == 0)
+        {
+            Console.WriteLine("No words found in the story.");
+            return;
+        }
 
-    // Extrae palabras de entre 3 y 10 letras.
-    List<string> words = Regex
-        .Matches(story, @"\b[A-Za-z]{3,10}\b")
-        .Select(match => match.Value)
-        .Distinct(StringComparer.OrdinalIgnoreCase)
-        .ToList();
+        string randomWord = words[Random.Shared.Next(words.Count)];
 
-    if (words.Count == 0)
-    {
-        return;
-    }
+        Console.WriteLine($"Selected word: {randomWord}");
 
-    // Elige una palabra aleatoria.
-    string randomWord =
-        words[Random.Shared.Next(words.Count)];
+        ContentPage page;
 
-    Console.WriteLine($"Selected word: {randomWord}");
+        if (cont % 2 == 0) page = new WritingPage(randomWord, ContinueStory);
+        else page = new SpeechPage(randomWord);
+        cont++;
+        await Navigation.PushAsync(page);
 
-    await Navigation.PushAsync(
-        new WritingPage(randomWord)
-    );
-
+        //await Navigation.PushAsync(new WritingPage(randomWord, StartStory));
     }
 
     public async void StartStory(byte[] imageData)
+    {
+        string objectDescription = await VisionEngine.Instance.IdentifyObject(imageData);
+        await Session.Instance.WriteNextPart(objectDescription);
+    }
+
+    public async void ContinueStory()
+    {
+        await Session.Instance.WriteNextPart(null);
+    }
+
+    /*public async void StartStory(byte[] imageData)
     {
         //string respuesta = await VisionEngine.Instance.IdentifyObject(imageData);
         //storyText.Text = respuesta;
 
         string objectDescription = await VisionEngine.Instance.IdentifyObject(imageData);
         await StoryGenerator.Instance.WriteStoryFromCharacter(storyText, objectDescription);
-    }
+    }*/
 
     // Alterna entre reproducir y pausar el audio
     private void PlayButton_Click(object? sender, RoutedEventArgs e)
@@ -195,5 +218,53 @@ public class PhotoStoryPage : ContentPage
     private void SpeedSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
         SpeechReader.Instance.SetSpeed((float)(3.0 - e.NewValue));
+    }
+
+    // Llega una nueva lista de frases desde el generador.
+    private void OnSentencesChanged(List<string> sentences)
+    {
+        _sentences = sentences;
+        Dispatcher.UIThread.Post(RefreshStoryText);
+    }
+
+    // Cambia la frase que se está leyendo en voz alta.
+    private void OnSpeakingSentenceChanged(string? sentence)
+    {
+        _speakingSentence = sentence;
+        Dispatcher.UIThread.Post(RefreshStoryText);
+    }
+
+    // Redibuja la historia, resaltando la frase que se está leyendo.
+    private void RefreshStoryText()
+    {
+        if (storyText.Inlines is null) return;
+
+        storyText.Inlines.Clear();
+
+        foreach (string sentence in _sentences)
+        {
+            string text = sentence.TrimEnd();
+
+            bool isSpeaking = sentence == _speakingSentence;
+
+            string separator = sentence.EndsWith("\n") ? "\n\n" : " ";
+
+            storyText.Inlines.Add(new Run(text + separator)
+            {
+                Foreground = isSpeaking
+                    ? new SolidColorBrush(Color.Parse("#872589"))
+                    : Brushes.Black,
+
+                FontWeight = isSpeaking ? FontWeight.Bold : FontWeight.Normal
+            });
+        }
+    }
+
+    public void Cleanup()
+    {
+        StoryGenerator.Instance.SentencesChanged -= OnSentencesChanged;
+        SpeechReader.Instance.SentenceChanged -= OnSpeakingSentenceChanged;
+
+        StoryGenerator.Instance.StopStory();
     }
 }

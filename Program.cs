@@ -31,9 +31,11 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Input.GestureRecognizers;
+using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
 using LittleLinguist.Controls;
 using LittleLinguist.Pages;
+using Vosk;
 using HomePage = LittleLinguist.Pages.HomePage;
 
 class Program
@@ -53,6 +55,9 @@ class Program
     {
         app.Styles.Add(new FluentTheme());
 
+        // Force light theme
+        app.RequestedThemeVariant = ThemeVariant.Light;
+
         var window = new Window
         {
             Title = "Little Linguist",
@@ -63,6 +68,8 @@ class Program
         var homePage = new HomePage();
         var navigationPage = new NavigationPage();
         navigationPage.Content = homePage;
+
+        // Fix touchscreen by disabling swipe to go back
         foreach (SwipeGestureRecognizer gr in navigationPage.GestureRecognizers.Cast<SwipeGestureRecognizer>())
         {
             gr.CanHorizontallySwipe = false;

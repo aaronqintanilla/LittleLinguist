@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using System.Text;
 using Avalonia.Threading;
 using System.Threading;
-using System.Collections.Generic;
 
 /*
 FALTA:
@@ -63,19 +62,33 @@ public class StoryGenerator
         inferenceParams = new InferenceParams
         {
             MaxTokens = 400,
-            AntiPrompts = new List<string> {"User:", "<|user|>"},
+            AntiPrompts = new List<string> { "User:", "<|user|>" },
             SamplingPipeline = new DefaultSamplingPipeline { Temperature = 1.0f, MinP = 0.05f, RepeatPenalty = 1.3f }
         };
     }
 
     // Starts a new story.
-    public async Task WriteIntroduction()
+    public async Task WriteIntroduction(string? objectDescription)
     {
-        await Generate(
-            "Write exactly the first THREE paragraphs of a children's story. " +
-            "Output only the story. The response must begin with Once upon a time. " +
-            "Do not include introductions, explanations or comments. " +
-            "End your response immediately after the third paragraph.");
+        if (objectDescription is null)
+        {
+            await Generate(
+                "Write exactly the first THREE paragraphs of a children's story. " +
+                "Output only the story. The response must begin with Once upon a time. " +
+                "Do not include introductions, explanations or comments. " +
+                "End your response immediately after the third paragraph.");
+        }
+        else
+        {
+            await Generate(
+                "Write exactly the first THREE paragraphs of a children's story. " +
+                $"The protagonist of the story must be this object: {objectDescription}\n" +
+                "Output only the story. The response must begin with Once upon a time. " +
+                "Do not include introductions, explanations or comments. " +
+                "And do not mention that the story was generated from an object description. " +
+                "End your response immediately after the third paragraph. " +
+                "Do not use Markdown or code blocks.");
+        }
     }
 
     // Continues the story without closing it. Can be called many times.
@@ -115,34 +128,24 @@ public class StoryGenerator
 
         string generatedText = "";  //Control
 
+        Console.WriteLine("----- PROMPT -----");
+        Console.WriteLine(prompt);
+
         try
         {
+            var message = new ChatHistory.Message(AuthorRole.User, prompt);
 
-////////////////////////////////////////////////////////
-Console.WriteLine("----- HISTORY -----");
+            await foreach (var chunk in session.ChatAsync(message, inferenceParams, token))
+            {
+                token.ThrowIfCancellationRequested();
 
-foreach (var msg in session.History.Messages)
-{
-    Console.WriteLine($"[{msg.AuthorRole}]");
-    Console.WriteLine(msg.Content);
-    Console.WriteLine("-------------------");
-}
+                generatedText += chunk;
+                if (generatedText.Contains("```"))
+                    break;
 
-var message = new ChatHistory.Message(AuthorRole.User, prompt);
-
-await foreach (var chunk in session.ChatAsync(message, inferenceParams, token))
-{
-    token.ThrowIfCancellationRequested();
-
-    generatedText += chunk;
-    if (generatedText.Contains("```"))
-        break;
-
-    OnTokenReceived(chunk);
-}
- OnGenerationCompleted();
-
-////////////////////////////////////////////////////////
+                OnTokenReceived(chunk);
+            }
+            OnGenerationCompleted();
 
         }
         catch (OperationCanceledException)
@@ -151,7 +154,7 @@ await foreach (var chunk in session.ChatAsync(message, inferenceParams, token))
         }
     }
 
-    public async Task WriteStoryFromCharacter(TextBlock textBlock, string objectDescription)
+    public async Task WriteStoryFromCharacter(string objectDescription)
     {
         if (session is null) return;
 
@@ -163,7 +166,6 @@ await foreach (var chunk in session.ChatAsync(message, inferenceParams, token))
         CancellationToken token = _generation.Token;
 
         _currentSentence.Clear();
-        textBlock.Text = "";
 
         string input =
             $"Write a short children's story about this object: {objectDescription}\n\n" +
@@ -189,7 +191,7 @@ await foreach (var chunk in session.ChatAsync(message, inferenceParams, token))
                 generatedText += chunk;
                 if (generatedText.Contains("```")) break;
 
-                OnTokenReceived(chunk, textBlock);
+                OnTokenReceived(chunk);
             }
 
             OnGenerationCompleted();
