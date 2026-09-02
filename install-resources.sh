@@ -75,5 +75,105 @@ else
     echo "Language model already downloaded."
 fi
 
+# ---------------------------------------------------------
+# Download the vision model
+# ---------------------------------------------------------
+
+VISION_MODEL="SmolVLM-256M-Instruct-Q8_0.gguf"
+VISION_MMPROJ="mmproj-SmolVLM-256M-Instruct-Q8_0.gguf"
+
+VISION_BASE_URL="https://huggingface.co/ggml-org/SmolVLM-256M-Instruct-GGUF/resolve/main"
+
+if [ ! -f "$MODELS_DIR/$VISION_MODEL" ]; then
+    echo "Downloading SmolVLM vision model..."
+
+    wget -q --show-progress \
+        -O "$MODELS_DIR/$VISION_MODEL" \
+        "$VISION_BASE_URL/$VISION_MODEL"
+else
+    echo "Vision model already downloaded."
+fi
+
+if [ ! -f "$MODELS_DIR/$VISION_MMPROJ" ]; then
+    echo "Downloading SmolVLM vision projector..."
+
+    wget -q --show-progress \
+        -O "$MODELS_DIR/$VISION_MMPROJ" \
+        "$VISION_BASE_URL/$VISION_MMPROJ"
+else
+    echo "Vision projector already downloaded."
+fi
+
+# ---------------------------------------------------------
+# Download Vosk speech recognition model
+# ---------------------------------------------------------
+
+VOSK_MODEL="vosk-model-small-en-us-0.15"
+VOSK_ZIP="$VOSK_MODEL.zip"
+VOSK_URL="https://alphacephei.com/vosk/models/$VOSK_ZIP"
+
+mkdir -p "$MODELS_DIR"
+
+if [ ! -d "$MODELS_DIR/$VOSK_MODEL" ]; then
+    echo "Downloading Vosk English speech recognition model..."
+
+    wget -q --show-progress \
+        -O "$MODELS_DIR/$VOSK_ZIP" \
+        "$VOSK_URL"
+
+    echo "Extracting Vosk model..."
+
+    unzip -q \
+        "$MODELS_DIR/$VOSK_ZIP" \
+        -d "$MODELS_DIR"
+
+    rm "$MODELS_DIR/$VOSK_ZIP"
+
+    echo "Vosk model installed."
+else
+    echo "Vosk model already downloaded."
+fi
+
+# ---------------------------------------------------------
+# Check system dependencies
+# ---------------------------------------------------------
+
+if ! command -v ffmpeg >/dev/null 2>&1; then
+    echo "FFmpeg is not installed."
+
+    if command -v apt-get >/dev/null 2>&1; then
+        echo "Installing FFmpeg..."
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+    else
+        echo "Please install FFmpeg manually and run this script again."
+        exit 1
+    fi
+else
+    echo "FFmpeg already installed: $(command -v ffmpeg)"
+fi
+
+# ---------------------------------------------------------
+# Check system dependencies
+# ---------------------------------------------------------
+
+for PACKAGE in wget unzip ffmpeg
+do
+    if ! command -v "$PACKAGE" >/dev/null 2>&1; then
+        echo "$PACKAGE is not installed."
+
+        if command -v apt-get >/dev/null 2>&1; then
+            echo "Installing $PACKAGE..."
+            sudo apt-get update
+            sudo apt-get install -y "$PACKAGE"
+        else
+            echo "Please install $PACKAGE manually."
+            exit 1
+        fi
+    else
+        echo "$PACKAGE already installed."
+    fi
+done
+
 echo ""
 echo "Setup completed successfully."

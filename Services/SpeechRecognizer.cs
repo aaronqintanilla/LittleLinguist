@@ -16,15 +16,104 @@ public class SpeechRecognizer
         model = new Model(modelPath);
     }
 
-    public async Task<string> RecognizeAsync()
+    // public async Task<string> RecognizeAsync()
+    // {
+    //     var startInfo = new ProcessStartInfo
+    //     {
+    //         // FileName = "ffmpeg", // ÉN UN FUTURO LO VOLVEMOS A PONER ASI QUIZAS
+    //         FileName = "/usr/bin/ffmpeg",
+
+    //         Arguments =
+    //             "-f avfoundation " +
+    //             "-i \":0\" " +
+    //             "-ar 16000 " +
+    //             "-ac 1 " +
+    //             "-f s16le " +
+    //             "-",
+
+    //         RedirectStandardOutput = true,
+    //         RedirectStandardError = true,
+    //         UseShellExecute = false,
+    //         CreateNoWindow = true
+    //     };
+
+    //     using var process = new Process();
+    //     process.StartInfo = startInfo;
+
+    //     process.Start();
+
+    //     using var recognizer = new VoskRecognizer(model, 16000.0f);
+
+    //     byte[] buffer = new byte[4096];
+
+    //     Stream output = process.StandardOutput.BaseStream;
+
+    //     string finalText = "";
+
+    //     // Escuchamos durante 5 segundos
+    //     DateTime endTime = DateTime.Now.AddSeconds(5);
+
+    //     while (DateTime.Now < endTime)
+    //     {
+    //         int bytesRead = await output.ReadAsync(
+    //             buffer,
+    //             0,
+    //             buffer.Length
+    //         );
+
+    //         if (bytesRead <= 0)
+    //         {
+    //             break;
+    //         }
+
+    //         recognizer.AcceptWaveform(
+    //             buffer,
+    //             bytesRead
+    //         );
+    //     }
+
+    //     // Terminamos FFmpeg
+    //     try
+    //     {
+    //         if (!process.HasExited)
+    //         {
+    //             process.Kill();
+    //         }
+    //     }
+    //     catch
+    //     {
+    //         // El proceso ya podía haber terminado.
+    //     }
+
+    //     // Obtenemos el resultado final de Vosk
+    //     string result = recognizer.FinalResult();
+
+    //     using JsonDocument json =
+    //         JsonDocument.Parse(result);
+
+    //     if (json.RootElement.TryGetProperty(
+    //         "text",
+    //         out JsonElement textElement))
+    //     {
+    //         finalText = textElement.GetString() ?? "";
+    //     }
+
+    //     return finalText;
+    // }
+    public async Task<string> RecognizeAsync(string targetWord)
     {
+        string normalizedTarget =
+            targetWord.Trim().ToLowerInvariant();
+
         var startInfo = new ProcessStartInfo
         {
             FileName = "ffmpeg",
 
             Arguments =
-                "-f avfoundation " +
-                "-i \":0\" " +
+                "-loglevel error " +
+                "-f pulse " +
+                "-i default " +
+                "-t 4 " +
                 "-ar 16000 " +
                 "-ac 1 " +
                 "-f s16le " +
@@ -36,29 +125,49 @@ public class SpeechRecognizer
             CreateNoWindow = true
         };
 
-        using var process = new Process();
-        process.StartInfo = startInfo;
+        using var process = new Process
+        {
+            StartInfo = startInfo
+        };
+
+        Console.WriteLine(
+            $"Listening for: {normalizedTarget}"
+        );
 
         process.Start();
 
-        using var recognizer = new VoskRecognizer(model, 16000.0f);
+        Task<string> errorTask =
+            process.StandardError.ReadToEndAsync();
+
+        // Vosk solo espera la palabra objetivo o algo desconocido.
+        string grammar = JsonSerializer.Serialize(
+            new[]
+            {
+                normalizedTarget,
+                "[unk]"
+            }
+        );
+
+        using var recognizer =
+            new VoskRecognizer(
+                model,
+                16000.0f,
+                grammar
+            );
 
         byte[] buffer = new byte[4096];
 
-        Stream output = process.StandardOutput.BaseStream;
+        Stream output =
+            process.StandardOutput.BaseStream;
 
-        string finalText = "";
-
-        // Escuchamos durante 5 segundos
-        DateTime endTime = DateTime.Now.AddSeconds(5);
-
-        while (DateTime.Now < endTime)
+        while (true)
         {
-            int bytesRead = await output.ReadAsync(
-                buffer,
-                0,
-                buffer.Length
-            );
+            int bytesRead =
+                await output.ReadAsync(
+                    buffer,
+                    0,
+                    buffer.Length
+                );
 
             if (bytesRead <= 0)
             {
@@ -71,21 +180,30 @@ public class SpeechRecognizer
             );
         }
 
-        // Terminamos FFmpeg
-        try
+        await process.WaitForExitAsync();
+
+        string ffmpegError =
+            await errorTask;
+
+        if (process.ExitCode != 0)
         {
-            if (!process.HasExited)
-            {
-                process.Kill();
-            }
-        }
-        catch
-        {
-            // El proceso ya podía haber terminado.
+            Console.Error.WriteLine(
+                "FFMPEG ERROR:"
+            );
+
+            Console.Error.WriteLine(
+                ffmpegError
+            );
+
+            return "";
         }
 
-        // Obtenemos el resultado final de Vosk
-        string result = recognizer.FinalResult();
+        string result =
+            recognizer.FinalResult();
+
+        Console.WriteLine(
+            $"Vosk raw result: {result}"
+        );
 
         using JsonDocument json =
             JsonDocument.Parse(result);
@@ -94,10 +212,16 @@ public class SpeechRecognizer
             "text",
             out JsonElement textElement))
         {
-            finalText = textElement.GetString() ?? "";
+            string recognized =
+                textElement.GetString() ?? "";
+
+            Console.WriteLine(
+                $"Recognized: '{recognized}'"
+            );
+
+            return recognized;
         }
 
-        return finalText;
+        return "";
     }
-
 }

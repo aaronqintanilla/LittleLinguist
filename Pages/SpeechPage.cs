@@ -148,15 +148,50 @@ public class SpeechPage : ContentPage
     // SPEECH TO TEXT
     // ---------------------------------------------------------
 
+    // private async void SpeakButton_Click(
+    // object? sender,
+    // RoutedEventArgs e)
+    // {
+    //     resultText.Text = "🎤 Listening...";
+
+    //     string recognizedText = await ListenAndRecognize();
+
+    //     resultText.Text = "You said: " + recognizedText;
+
+    //     if (IsCorrect(recognizedText))
+    //     {
+    //         resultText.Text += "\n✅ Correct!";
+    //     }
+    //     else
+    //     {
+    //         resultText.Text += "\n❌ Try again!";
+    //     }
+    // }
     private async void SpeakButton_Click(
     object? sender,
     RoutedEventArgs e)
+{
+    try
     {
+        Console.WriteLine("Starting speech recognition...");
+
         resultText.Text = "🎤 Listening...";
 
-        string recognizedText = await ListenAndRecognize();
+        string recognizedText =
+            await ListenAndRecognize();
 
-        resultText.Text = "You said: " + recognizedText;
+        Console.WriteLine(
+            $"Recognized: {recognizedText}"
+        );
+
+        if (string.IsNullOrWhiteSpace(recognizedText))
+        {
+            resultText.Text = "🎤 No speech detected. Try again!";
+            return;
+        }
+
+        resultText.Text =
+            "You said: " + recognizedText;
 
         if (IsCorrect(recognizedText))
         {
@@ -167,6 +202,20 @@ public class SpeechPage : ContentPage
             resultText.Text += "\n❌ Try again!";
         }
     }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(
+            "SPEECH RECOGNITION ERROR:"
+        );
+
+        Console.Error.WriteLine(
+            ex.ToString()
+        );
+
+        resultText.Text =
+            "❌ Speech recognition error.";
+    }
+}
 
     private bool IsCorrect(string recognizedText)
     {
@@ -185,7 +234,8 @@ public class SpeechPage : ContentPage
 
     private async Task<string> ListenAndRecognize()
     {
-        return await speechRecognizer.RecognizeAsync();
+        return await speechRecognizer
+            .RecognizeAsync(targetWord);
     }
 
 }
