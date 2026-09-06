@@ -25,7 +25,11 @@ public class SettingsPage : ContentPage
 
     public SettingsPage()
     {
-        //Background = new SolidColorBrush(Color.Parse("#F5F5F5"));
+        // ---------------------------------------------------------
+        // FONDO
+        // ---------------------------------------------------------
+
+        Background = new SolidColorBrush(Color.Parse("#EDE7FF"));
 
         // ---------------------------------------------------------
         // BOTÓN BACK
@@ -34,8 +38,13 @@ public class SettingsPage : ContentPage
         var backButton = new Button
         {
             Content = "← Back",
+            FontSize = 17,
+            FontWeight = FontWeight.Bold,
+            Foreground = new SolidColorBrush(Color.Parse("#5940A8")),
+            Background = new SolidColorBrush(Color.Parse("#D8CCFF")),
             HorizontalAlignment = HorizontalAlignment.Left,
-            Padding = new Thickness(18, 10)
+            Padding = new Thickness(18, 10),
+            CornerRadius = new CornerRadius(16)
         };
 
         backButton.Click += BackButton_Click;
@@ -46,19 +55,54 @@ public class SettingsPage : ContentPage
 
         var title = new TextBlock
         {
-            Text = "Little Linguist",
+            Text = "⚙ Little Linguist",
             FontSize = 30,
             FontWeight = FontWeight.Bold,
-            HorizontalAlignment = HorizontalAlignment.Center
+            Foreground = Brushes.White,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center
         };
 
         var titleBorder = new Border
         {
-            Background = new SolidColorBrush(Color.Parse("#D87DDE")),
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(15),
+            Background = new SolidColorBrush(Color.Parse("#6846C7")),
+            CornerRadius = new CornerRadius(20),
+            Padding = new Thickness(20, 14),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
             Child = title
         };
+
+        // ---------------------------------------------------------
+        // DECORACIÓN
+        // ---------------------------------------------------------
+
+        var decoration = new Grid
+        {
+            Height = 45
+        };
+
+        var star = new TextBlock
+        {
+            Text = "✦  ✧  ☆",
+            FontSize = 27,
+            Foreground = new SolidColorBrush(Color.Parse("#FFD966")),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(20, 0, 0, 0)
+        };
+
+        var cloud = new TextBlock
+        {
+            Text = "☁",
+            FontSize = 40,
+            Foreground = Brushes.White,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 35, 0)
+        };
+
+        decoration.Children.Add(star);
+        decoration.Children.Add(cloud);
 
         // ---------------------------------------------------------
         // MODO DE APRENDIZAJE
@@ -69,14 +113,16 @@ public class SettingsPage : ContentPage
             Content = "Default story",
             GroupName = "LearningMode",
             IsChecked = true,
-            FontSize = 18
+            FontSize = 18,
+            Foreground = new SolidColorBrush(Color.Parse("#5940A8"))
         };
 
         var createStory = new RadioButton
         {
             Content = "Create your own story",
             GroupName = "LearningMode",
-            FontSize = 18
+            FontSize = 18,
+            Foreground = new SolidColorBrush(Color.Parse("#5940A8"))
         };
 
         var defaultStoryPanel = new StackPanel
@@ -88,7 +134,8 @@ public class SettingsPage : ContentPage
                 new TextBlock
                 {
                     Text = "Start a ready-made adventure created just for you.",
-                    TextWrapping = TextWrapping.Wrap
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground = new SolidColorBrush(Color.Parse("#55729A"))
                 }
             }
         };
@@ -102,7 +149,8 @@ public class SettingsPage : ContentPage
                 new TextBlock
                 {
                     Text = "Show an object and make it part of your adventure.",
-                    TextWrapping = TextWrapping.Wrap
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground = new SolidColorBrush(Color.Parse("#55729A"))
                 }
             }
         };
@@ -120,7 +168,7 @@ public class SettingsPage : ContentPage
         modeGrid.Children.Add(createStoryPanel);
 
         var modeSection = CreateSection(
-            "Select your learning mode:",
+            "📚 Select your learning mode:",
             modeGrid
         );
 
@@ -130,30 +178,34 @@ public class SettingsPage : ContentPage
 
         _pronunciationCheckBox = new CheckBox
         {
-            Content = "Pronunciation",
-            FontSize = 18, 
-            IsChecked = true
+            Content = "🗣Pronunciation",
+            FontSize = 18,
+            IsChecked = true,
+            Foreground = new SolidColorBrush(Color.Parse("#5940A8"))
         };
 
         _writingCheckBox = new CheckBox
         {
-            Content = "Writing",
+            Content = "✏ Writing",
             FontSize = 18,
-            IsChecked = true
+            IsChecked = true,
+            Foreground = new SolidColorBrush(Color.Parse("#5940A8"))
         };
 
         _readingCheckBox = new CheckBox
         {
-            Content = "Reading comprehension",
+            Content = "📖Reading comprehension",
             FontSize = 18,
-            IsChecked = true
+            IsChecked = true,
+            Foreground = new SolidColorBrush(Color.Parse("#5940A8"))
         };
 
         _listeningCheckBox = new CheckBox
         {
-            Content = "Listening comprehension",
+            Content = "👂Listening comprehension",
             FontSize = 18,
-            IsChecked = true
+            IsChecked = true,
+            Foreground = new SolidColorBrush(Color.Parse("#5940A8"))
         };
 
         var pronunciationPanel = CreateSkill(
@@ -190,7 +242,7 @@ public class SettingsPage : ContentPage
         AddToGrid(skillsGrid, listeningPanel, 1, 1);
 
         var skillsSection = CreateSection(
-            "Which skills do you want to strengthen?",
+            "🌟 Which skills do you want to strengthen?",
             skillsGrid
         );
 
@@ -202,17 +254,22 @@ public class SettingsPage : ContentPage
         {
             Text = "",
             FontSize = 16,
-            VerticalAlignment = VerticalAlignment.Center
+            Foreground = new SolidColorBrush(Color.Parse("#55729A")),
+            VerticalAlignment = VerticalAlignment.Center,
+            TextWrapping = TextWrapping.Wrap
         };
 
         var startButton = new Button
         {
-            Content = "Save configuration",
+            Content = "Save configuration ✨",
             FontSize = 20,
             FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White,
+            Background = new SolidColorBrush(Color.Parse("#7956D8")),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Center,
-            Padding = new Thickness(20, 12)
+            Padding = new Thickness(20, 14),
+            CornerRadius = new CornerRadius(20)
         };
 
         startButton.Click += StartButton_Click;
@@ -235,12 +292,13 @@ public class SettingsPage : ContentPage
 
         var mainPanel = new StackPanel
         {
-            Margin = new Thickness(20),
-            Spacing = 35,
+            Margin = new Thickness(35, 20),
+            Spacing = 25,
             Children =
             {
                 backButton,
                 titleBorder,
+                decoration,
                 modeSection,
                 skillsSection,
                 bottomGrid
@@ -265,16 +323,18 @@ public class SettingsPage : ContentPage
                 {
                     Text = title,
                     FontSize = 21,
+                    FontWeight = FontWeight.Bold,
                     Foreground =
-                        new SolidColorBrush(Color.Parse("#872589"))
+                        new SolidColorBrush(Color.Parse("#6846C7"))
                 },
 
                 new Border
                 {
+                    Background = Brushes.White,
                     BorderBrush =
-                        new SolidColorBrush(Color.Parse("#E16BE2")),
+                        new SolidColorBrush(Color.Parse("#C9BBF5")),
                     BorderThickness = new Thickness(2),
-                    CornerRadius = new CornerRadius(14),
+                    CornerRadius = new CornerRadius(18),
                     Padding = new Thickness(20),
                     Child = content
                 }
@@ -296,7 +356,9 @@ public class SettingsPage : ContentPage
                 new TextBlock
                 {
                     Text = description,
-                    TextWrapping = TextWrapping.Wrap
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground =
+                        new SolidColorBrush(Color.Parse("#55729A"))
                 }
             }
         };

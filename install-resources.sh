@@ -1,6 +1,25 @@
 #!/bin/bash
 set -e
 
+# Check required system dependencies
+if ! command -v curl >/dev/null 2>&1; then
+    echo "curl is not installed."
+
+    if command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get update
+        sudo apt-get install -y curl
+    elif command -v brew >/dev/null 2>&1; then
+        brew install curl
+    elif command -v winget >/dev/null 2>&1; then
+        winget install --id curl.curl --exact \
+            --accept-package-agreements \
+            --accept-source-agreements
+    else
+        echo "Install curl manually, then run this script again."
+        exit 1
+    fi
+fi
+
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BASE="$PROJECT_DIR/resources"
 PIPER_VERSION="2023.11.14-2"
@@ -52,8 +71,11 @@ esac
 mkdir -p "$BASE/voices"
 cd "$BASE"
 
-if [ ! -f "$PIPER_EXECUTABLE" ]; then
-    # Elimina restos de una instalación para otra plataforma.
+# Check that Piper is really installed and is an executable binary.
+if [ ! -x "$PIPER_EXECUTABLE" ] || ! file "$PIPER_EXECUTABLE" 2>/dev/null | grep -q "ELF"; then
+    echo "Piper engine not installed correctly. Installing it..."
+
+    # Elimina cualquier instalación/resto anterior.
     rm -rf "piper"
 
     echo "Downloading Piper engine..."
@@ -67,9 +89,19 @@ if [ ! -f "$PIPER_EXECUTABLE" ]; then
     fi
 
     rm "$PACKAGE"
-    chmod +x "$PIPER_EXECUTABLE" 2>/dev/null || true
+
+    chmod +x "$PIPER_EXECUTABLE"
+
+    # Verify installation
+    if ! file "$PIPER_EXECUTABLE" | grep -q "ELF"; then
+        echo "ERROR: Downloaded Piper is not a valid Linux executable."
+        file "$PIPER_EXECUTABLE"
+        exit 1
+    fi
+
+    echo "Piper engine installed successfully."
 else
-    echo "Piper engine already installed."
+    echo "Piper engine already installed: $PIPER_EXECUTABLE"
 fi
 
 # Download the voice model
