@@ -228,7 +228,7 @@ public class StoryPage : ContentPage
         {
             string text = sentence.TrimEnd();
 
-            bool isSpeaking = sentence == _speakingSentence;
+            bool isSpeaking = text == _speakingSentence;
 
             string separator = sentence.EndsWith("\n") ? "\n\n" : " ";
 

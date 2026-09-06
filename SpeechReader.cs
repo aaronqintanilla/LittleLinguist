@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -59,7 +60,8 @@ public class SpeechReader : IDisposable
     {
         string basePath = Path.Combine(AppContext.BaseDirectory, "resources");
 
-        _piperPath = Path.Combine(basePath, "piper", "piper");
+        // On windows, executable name is piper.exe, on UNIX-like, only piper
+        _piperPath = OperatingSystem.IsWindows() ? Path.Combine(basePath, "piper", "piper.exe") : Path.Combine(basePath, "piper", "piper");
         _modelPath = Path.Combine(basePath, "voices", "en_US-lessac-medium.onnx");
 
         if (!File.Exists(_piperPath))
@@ -201,7 +203,7 @@ public class SpeechReader : IDisposable
 
     // Background loop: plays the generated audio files one after another.
     // A sentence cut short by Pause() is replayed once playback resumes.
-    private void ProcessAudioQueue()
+    private async Task ProcessAudioQueue()
     {
         try
         {
@@ -220,7 +222,7 @@ public class SpeechReader : IDisposable
                     try
                     {
                         SentenceChanged?.Invoke(item.Text);
-                        PlayAudio(item.File);
+                        await PlayAudio(item.File);
                     }
                     catch (Exception ex)
                     {
@@ -292,16 +294,42 @@ public class SpeechReader : IDisposable
 
     // Plays a WAV file through the system's default audio output.
     // The running process is stored so playback can be stopped on demand.
-    private void PlayAudio(string filePath)
+    private async Task PlayAudio(string filePath)
     {
+        if (OperatingSystem.IsWindows())
+        {
+            await Task.Run(() =>
+            {
+                if (!OperatingSystem.IsWindows()) return;
+                using var player = new System.Media.SoundPlayer(filePath);
+            });
+
+            return;
+        }
+
+        string executable;
+        if (OperatingSystem.IsLinux())
+        {
+            executable = "aplay";
+        }
+        else if (OperatingSystem.IsMacOS())
+        {
+            executable = "afplay";
+        }
+        else
+        {
+            throw new PlatformNotSupportedException($"Audio playback not supported on platform: {RuntimeInformation.OSDescription}");
+        }
+
         var info = new ProcessStartInfo
         {
-            FileName = "aplay",
+            FileName = executable,
             UseShellExecute = false,
             RedirectStandardError = true
         };
-
-        info.ArgumentList.Add("-q");
+        
+        // -q is quiet mode, only available in linux aplay, but not in macos afplay
+        if (OperatingSystem.IsLinux()) info.ArgumentList.Add("-q");
         info.ArgumentList.Add(filePath);
 
         Process process = Process.Start(info)
