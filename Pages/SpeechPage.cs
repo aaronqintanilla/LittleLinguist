@@ -7,6 +7,7 @@ using Avalonia.Media;
 using System.Threading.Tasks;
 using System.IO;
 using LittleLinguist.Services;
+using Avalonia.Threading;
 
 namespace LittleLinguist.Pages;
 
@@ -29,6 +30,7 @@ public class SpeechPage : ContentPage
         string modelPath = $"{System.IO.Directory.GetCurrentDirectory()}/models/vosk-model-small-en-us-0.15";
 
         speechRecognizer = new SpeechRecognizer(modelPath);
+        SpeechReader.Instance.SentenceChanged += OnSentenceChanged;
 
         // ---------------------------------------------------------
         // TÍTULO
@@ -68,6 +70,36 @@ public class SpeechPage : ContentPage
         };
 
         playButton.Click += PlayButton_Click;
+
+        var speedLabel = new TextBlock
+        {
+            Text = "Speed: 1.0x",
+            FontSize = 16,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+
+        var speedSlider = new Slider
+        {
+            Minimum = 0.1,
+            Maximum = 1.5,
+            Value = 1.0,
+            TickFrequency = 0.1,
+            IsSnapToTickEnabled = true,
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+
+        speedSlider.ValueChanged += (_, e) =>
+        {
+            double speed = e.NewValue;
+
+            speedLabel.Text = $"Speed: {speed:F1}x";
+
+            // Piper funciona al revés:
+            // lengthScale pequeño = más rápido.
+            SpeechReader.Instance.SetSpeed(
+                (float)(1.0 / speed)
+            );
+        };
 
         // ---------------------------------------------------------
         // BOTÓN MICROFONO
@@ -112,6 +144,8 @@ public class SpeechPage : ContentPage
                 title,
                 wordText,
                 playButton,
+                speedLabel,
+                speedSlider,
                 speakButton,
                 resultText
             }
@@ -135,10 +169,11 @@ public class SpeechPage : ContentPage
     // REPRODUCIR PALABRA
     // ---------------------------------------------------------
     private void PlayButton_Click(
-        object? sender,
-        RoutedEventArgs e)
+    object? sender,
+    RoutedEventArgs e)
     {
-        resultText.Text = "🔊 Playing...";
+        // Eliminamos cualquier reproducción anterior.
+        SpeechReader.Instance.Stop();
 
         SpeechReader.Instance.Speak(targetWord);
         SpeechReader.Instance.Play();
@@ -190,12 +225,19 @@ public class SpeechPage : ContentPage
             return;
         }
 
-        resultText.Text =
-            "You said: " + recognizedText;
-
         if (IsCorrect(recognizedText))
         {
             resultText.Text += "\n✅ Correct!";
+            await Task.Delay(1200);
+            resultText.Text =
+                "📖 Back to the story...";
+
+            await Task.Delay(800);
+
+            if (Navigation is not null)
+            {
+                await Navigation.PopAsync();
+            }
         }
         else
         {
@@ -238,4 +280,18 @@ public class SpeechPage : ContentPage
             .RecognizeAsync(targetWord);
     }
 
+    private void OnSentenceChanged(string? sentence)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (sentence is null)
+            {
+                resultText.Text = "";
+            }
+            else
+            {
+                resultText.Text = "🔊 Playing...";
+            }
+        });
+    }
 }

@@ -167,10 +167,33 @@ public class StoryPage : ContentPage
 
         ContentPage page;
 
-        if (cont % 2 == 0) page = new WritingPage(randomWord, StartStory);
-        else page = new SpeechPage(randomWord);
-        cont++;
-        await Navigation.PushAsync(page);
+        switch (cont % 3)
+        {
+            case 0:
+                page = new WritingPage(
+                    randomWord,
+                    StartStory
+                );
+                break;
+
+            case 1:
+                page =
+                    new ReadingComprehensionPage(
+                        story,
+                        StartStory
+                    );
+                break;
+
+            default:
+                page = new SpeechPage(
+                    randomWord
+                );
+                break;
+        }
+
+    cont++;
+
+    await Navigation.PushAsync(page);
 
         //BUG: await Navigation.PushAsync(new WritingPage(randomWord, StartStory));
     }

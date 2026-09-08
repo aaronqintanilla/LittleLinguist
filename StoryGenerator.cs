@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using System.Text;
 using Avalonia.Threading;
 using System.Threading;
+using System.Text.Json;
+using LittleLinguist;
+using System.Linq;
 
 /*
 FALTA:
@@ -33,7 +36,12 @@ public class StoryGenerator
     // Cancels the story currently being generated.
     private CancellationTokenSource? _generation;
 
+
+
     InteractiveExecutor? executor;
+
+    private LLamaWeights? _model;
+    private ModelParams? _modelParams;
     
     void InitSession()
     {
@@ -46,17 +54,24 @@ public class StoryGenerator
         //DESCARGAR y guardar en models
         string modelPath = $"{System.IO.Directory.GetCurrentDirectory()}/models/gemma-3-1b-it-q4_0.gguf";
 
-        var parameters = new ModelParams(modelPath)
+        _modelParams = new ModelParams(modelPath)
         {
             ContextSize = 2048,
             GpuLayerCount = 0
         };
 
         Console.WriteLine("Loading model...");
-        var model = LLamaWeights.LoadFromFile(parameters);
 
-        var context = model.CreateContext(parameters);
-        executor = new InteractiveExecutor(context);
+        _model = LLamaWeights.LoadFromFile(
+            _modelParams
+        );
+
+        var context =
+            _model.CreateContext(_modelParams);
+
+        executor =
+            new InteractiveExecutor(context);
+
         InitSession();
 
         inferenceParams = new InferenceParams
@@ -202,6 +217,205 @@ public class StoryGenerator
         }
     }
 
+   public async Task<List<ReadingQuestion>> GenerateReadingQuestions(
+    string story)
+    {
+        var questions = new List<ReadingQuestion>();
+
+        if (executor is null)
+        {
+            Console.Error.WriteLine("Language model is not loaded.");
+            return questions;
+        }
+
+        if (string.IsNullOrWhiteSpace(story))
+        {
+            Console.Error.WriteLine("Story is empty.");
+            return questions;
+        }
+
+        Console.WriteLine("----- STORY FOR QUESTIONS -----");
+        Console.WriteLine(story);
+
+        if (_model is null ||
+        _modelParams is null)
+        {
+            Console.Error.WriteLine(
+                "Language model is not loaded."
+            );
+
+            return questions;
+        }
+
+        string prompt =
+            "Read this children's story:\n\n" +
+            story +
+            "\n\n" +
+
+            "Create ONE very easy multiple-choice reading comprehension question.\n" +
+            "Use only information explicitly written in the story.\n" +
+            "Give exactly 3 short answer options.\n" +
+            "The FIRST option must be the correct answer.\n" +
+            "The SECOND and THIRD options must be clearly WRONG.\n" +
+            "Wrong answers must NOT be paraphrases of the correct answer.\n" +
+            "Wrong answers must refer to clearly different places, objects, people or actions.\n" +
+            "Do not repeat the same fact using different words.\n" +
+            "Keep all answers short.\n\n" +
+
+            "Return ONLY ONE line using exactly this format:\n" +
+            "question|correct answer|wrong answer|wrong answer\n\n" +
+
+            "Good example:\n" +
+            "Where did Mia live?|In the forest|At the beach|In a castle\n\n" +
+
+            "BAD example - do NOT do this:\n" +
+            "Where did Mia live?|In the forest|The Green Forest|She lived in the forest\n";
+
+        var parameters = new InferenceParams
+        {
+            MaxTokens = 70,
+
+            AntiPrompts = new List<string>
+            {
+                "User:",
+                "<|user|>"
+            },
+
+            SamplingPipeline =
+                new DefaultSamplingPipeline
+                {
+                    Temperature = 0.1f,
+                    MinP = 0.05f,
+                    RepeatPenalty = 1.1f
+                }
+        };
+
+        var generated =
+    new StringBuilder();
+
+    try
+    {
+        // Para las preguntas usamos una inferencia
+        // independiente de la historia.
+        var questionExecutor =
+            new StatelessExecutor(
+                _model,
+                _modelParams)
+            {
+                ApplyTemplate = true
+            };
+
+        await foreach (
+            string chunk
+            in questionExecutor.InferAsync(
+                prompt,
+                parameters))
+        {
+            generated.Append(chunk);
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(
+            "QUESTION GENERATION ERROR:"
+        );
+
+        Console.Error.WriteLine(ex);
+
+        return questions;
+    }
+        
+
+        string text = generated
+            .ToString()
+            .Trim();
+
+        Console.WriteLine(
+            "----- GENERATED QUESTIONS -----"
+        );
+
+        Console.WriteLine(text);
+
+        // Cada pregunta debe tener:
+        //
+        // pregunta | opción1 | opción2 | opción3 | respuesta
+
+        string[] lines = text.Split(
+    '\n',
+    StringSplitOptions.RemoveEmptyEntries
+);
+
+    foreach (string rawLine in lines)
+    {
+        string line = rawLine.Trim();
+
+        string[] parts =
+            line.Split('|');
+
+        // Ahora esperamos 4 partes:
+        // pregunta | correcta | incorrecta | incorrecta
+        if (parts.Length != 4)
+            continue;
+
+        string question =
+            parts[0].Trim();
+
+        string correct =
+            parts[1].Trim();
+
+        string wrong1 =
+            parts[2].Trim();
+
+        string wrong2 =
+            parts[3].Trim();
+
+        if (string.IsNullOrWhiteSpace(question) ||
+            string.IsNullOrWhiteSpace(correct) ||
+            string.IsNullOrWhiteSpace(wrong1) ||
+            string.IsNullOrWhiteSpace(wrong2))
+        {
+            continue;
+        }
+
+        // Guardamos las opciones junto con si son correctas.
+        var options = new List<(string Text, bool Correct)>
+        {
+            (correct, true),
+            (wrong1, false),
+            (wrong2, false)
+        };
+
+        // Las mezclamos para que la correcta
+        // no aparezca siempre la primera.
+        options = options
+            .OrderBy(_ => Random.Shared.Next())
+            .ToList();
+
+        int correctIndex =
+            options.FindIndex(x => x.Correct);
+
+        questions.Add(
+            new ReadingQuestion
+            {
+                Question = question,
+
+                Options = options
+                    .Select(x => x.Text)
+                    .ToList(),
+
+                CorrectAnswer = correctIndex
+            }
+        );
+        break;
+    }
+
+        Console.WriteLine(
+            $"Parsed questions: {questions.Count}"
+        );
+
+        return questions;
+    }
+
     // Cancels the story being generated and stops any audio.
     public void StopStory()
     {
@@ -215,6 +429,21 @@ public class StoryGenerator
         _sentences.Clear();
 
         SentencesChanged?.Invoke(new List<string>());
+    }
+
+    public void StopStoryKeepingText()
+    {
+        _generation?.Cancel();
+        _generation?.Dispose();
+        _generation = null;
+
+        SpeechReader.Instance.Stop();
+
+        _currentSentence.Clear();
+
+        // IMPORTANTE:
+        // NO borramos _sentences
+        // NO avisamos a la interfaz con una lista vacía
     }
 
     // Called for every token produced by the language model.

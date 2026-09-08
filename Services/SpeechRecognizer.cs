@@ -178,6 +178,47 @@ public class SpeechRecognizer
                 buffer,
                 bytesRead
             );
+            // Miramos lo que Vosk está reconociendo mientras hablamos.
+            string partialResult =
+                recognizer.PartialResult();
+
+            using JsonDocument partialJson =
+                JsonDocument.Parse(partialResult);
+
+            if (partialJson.RootElement.TryGetProperty(
+                "partial",
+                out JsonElement partialElement))
+            {
+                string partialText =
+                    partialElement.GetString()?
+                        .Trim()
+                        .ToLowerInvariant()
+                    ?? "";
+
+                Console.WriteLine(
+                    $"Partial: '{partialText}'"
+                );
+
+                // Si ya ha detectado la palabra correcta,
+                // dejamos de escuchar inmediatamente.
+                if (partialText == normalizedTarget)
+                {
+                    Console.WriteLine(
+                        $"Target detected: '{normalizedTarget}'"
+                    );
+
+                    try
+                    {
+                        if (!process.HasExited)
+                            process.Kill();
+                    }
+                    catch
+                    {
+                    }
+
+                    return normalizedTarget;
+                }
+            }
         }
 
         await process.WaitForExitAsync();

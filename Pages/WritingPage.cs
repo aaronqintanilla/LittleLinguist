@@ -20,6 +20,7 @@ public class WritingPage : ContentPage
     private readonly TracingCanvas _tracingCanvas;
     private readonly TextBlock _feedbackText;
     private readonly Action? _onCompleted;
+    private bool _isCompleting = false;
 
     public WritingPage(string word = "APPLE", Action? onCompleted = null)
     {
@@ -182,35 +183,51 @@ public class WritingPage : ContentPage
     // ---------------------------------------------------------
 
     private async void ContinueButton_Click(
-        object? sender,
-        RoutedEventArgs e)
+    object? sender,
+    RoutedEventArgs e)
+{
+    // Si ya estamos volviendo a StoryPage,
+    // ignoramos cualquier clic adicional.
+    if (_isCompleting)
+        return;
+
+    double score =
+        _tracingCanvas.CalculateScore();
+
+    if (score >= 0.80)
     {
-        double score =
-            _tracingCanvas.CalculateScore();
+        // Desde este momento no permitimos más clics.
+        _isCompleting = true;
 
-        if (score >= 0.80)
+        if (sender is Button button)
         {
-            _feedbackText.Text = $"✅ Great job! Score: {score:P0}";
-            await Task.Delay(1200);
-
-            _feedbackText.Text = "📖 Back to the story...";
-            await Task.Delay(800);
-
-            if (Navigation is not null)
-            {
-                await Navigation.PopAsync();
-            }
-
-            // La historia continúa. Sin await: no bloqueamos la vuelta.
-            _onCompleted?.Invoke();
+            button.IsEnabled = false;
         }
-        else
+
+        _feedbackText.Text =
+            $"✅ Great job! Score: {score:P0}";
+
+        await Task.Delay(1200);
+
+        _feedbackText.Text =
+            "📖 Back to the story...";
+
+        await Task.Delay(800);
+
+        if (Navigation is not null)
         {
-            // La palabra está mal: borramos el trazado.
-            _tracingCanvas.Clear();
-
-            _feedbackText.Text =
-                $"✏️ Try again. Write the whole word carefully. Score: {score:P0}";
+            await Navigation.PopAsync();
         }
+
+        // Solo se ejecutará UNA vez.
+        _onCompleted?.Invoke();
     }
+    else
+    {
+        _tracingCanvas.Clear();
+
+        _feedbackText.Text =
+            $"✏️ Try again. Write the whole word carefully. Score: {score:P0}";
+    }
+}
 }
