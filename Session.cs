@@ -19,9 +19,6 @@ public class Session
 {
     public static Session Instance { get; } = new Session();
 
-    // How many middle parts to generate before the ending.
-    public int MiddleCount { get; set; } = 3;
-
     // Parts of the story already generated (counter)
     private int _partsWritten;
 
@@ -36,22 +33,25 @@ public class Session
     // Generates whichever part comes next.
     public async Task WriteNextPart(string? objectDescription)
     {
-        if (_partsWritten == 0)
+        switch (_partsWritten)
         {
-            await StoryGenerator.Instance.WriteIntroduction(objectDescription);
-        }
-        else if (_partsWritten <= MiddleCount)
-        {
-            await StoryGenerator.Instance.WriteMiddle();
-        }
-        else
-        {
-            await StoryGenerator.Instance.WriteEnding();
+            case 0:
+                await StoryGenerator.Instance.WriteIntroduction(objectDescription);
+                break;
+            case 1:
+                await StoryGenerator.Instance.WriteMiddle();
+                break;
+            case 2:
+                await StoryGenerator.Instance.WriteEnding();
+                break;
+
+            default:
+                return;
         }
 
-        ++_partsWritten;
+        _partsWritten++;
     }
 
     // True when the story has been closed.
-    public bool IsFinished => _partsWritten > MiddleCount + 1;
+    public bool IsFinished => _partsWritten >= 3;
 }

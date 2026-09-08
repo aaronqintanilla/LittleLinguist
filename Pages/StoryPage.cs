@@ -5,11 +5,6 @@ using Avalonia.Media;
 using Avalonia.Interactivity;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using LLama;
-using LLama.Common;
-using LLama.Sampling;
-using System.Threading.Tasks;
 using Avalonia.Controls.Primitives;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -125,6 +120,7 @@ public class StoryPage : ContentPage
     // Vuelve a la página anterior (Home)
     private async void FinishButton_Click(object? sender, RoutedEventArgs e)
     {
+        StoryGenerator.Instance.StopStory();
         if(Navigation is not null)
         {
             await Navigation.PopAsync();
@@ -139,13 +135,20 @@ public class StoryPage : ContentPage
             return;
         }
 
+        if(Session.Instance.IsFinished)
+        {
+            StoryGenerator.Instance.StopStory();
+            await Navigation.PopAsync();
+            return;
+        }
+
         // Guardamos el texto antes de parar, porque StopStory
         // vacía la lista de frases.
         string story = string.Join(" ", _sentences);
 
         // Detiene la generación y la lectura.
-        StoryGenerator.Instance.StopStory();
-        SpeechReader.Instance.Pause();
+        StoryGenerator.Instance.PauseStory();
+        //SpeechReader.Instance.Pause();
         playButton.Content = "Play";
 
         // Extrae palabras de entre 3 y 10 letras.

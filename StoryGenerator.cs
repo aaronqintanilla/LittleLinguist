@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using LLama;
 using LLama.Common;
 using LLama.Sampling;
+using LLama.Native;
+using Llama.Grammar;
 using System.Threading.Tasks;
 using System.Text;
 using Avalonia.Threading;
@@ -11,6 +13,8 @@ using System.Threading;
 using System.Text.Json;
 using LittleLinguist;
 using System.Linq;
+using Llama.Grammar.Service;
+using LLama.Transformers;
 
 /*
 FALTA:
@@ -27,11 +31,14 @@ public class StoryGenerator
     public event Action<List<string>>? SentencesChanged;
 
     ChatSession? session;
-    InferenceParams? inferenceParams;
+    private LLamaContext? context;
     private readonly StringBuilder _currentSentence = new();
 
     // All sentences generated so far, in order.
     private readonly List<string> _sentences = new();
+
+    private LLamaWeights? model;
+    private ModelParams parameters;
 
     // Cancels the story currently being generated.
     private CancellationTokenSource? _generation;
@@ -46,7 +53,13 @@ public class StoryGenerator
     void InitSession()
     {
         if (executor is null) throw new NullReferenceException("Interactive Executor is null");
+        if (model is null) throw new NullReferenceException("Model is null");
         session = new ChatSession(executor);
+        session.AddSystemMessage("You write warm, simple and coherent children's stories. " +
+            "Never mention prompts, instructions, paragraphs, models, generation, or story structure. Output narrative prose only.");
+        session.WithHistoryTransform(
+            new PromptTemplateTransformer(model, withAssistant: true)
+        );
     }
 
     public async Task LoadModel()
@@ -54,44 +67,62 @@ public class StoryGenerator
         //DESCARGAR y guardar en models
         string modelPath = $"{System.IO.Directory.GetCurrentDirectory()}/models/gemma-3-1b-it-q4_0.gguf";
 
-        _modelParams = new ModelParams(modelPath)
+        parameters = new ModelParams(modelPath)
         {
             ContextSize = 2048,
             GpuLayerCount = 0
         };
 
         Console.WriteLine("Loading model...");
+        model = LLamaWeights.LoadFromFile(parameters);
 
-        _model = LLamaWeights.LoadFromFile(
-            _modelParams
-        );
-
-        var context =
-            _model.CreateContext(_modelParams);
-
-        executor =
-            new InteractiveExecutor(context);
-
+        context = model.CreateContext(parameters);
+        executor = new InteractiveExecutor(context);
         InitSession();
+    }
 
-        inferenceParams = new InferenceParams
+    // Returns a GBNF grammar that forces the model to output only three paragraphs
+    public string GetStoryGrammar()
+    {
+        return """
+            root ::= paragraph "\n\n" paragraph "\n\n" paragraph
+
+            paragraph ::= first-char other-char*
+
+            first-char ::= [^ \t\n<\\]
+            other-char ::= [^\n<\\]
+            """;
+    }
+
+    private InferenceParams CreateInferenceParams()
+    {
+        return new InferenceParams
         {
             MaxTokens = 400,
-            AntiPrompts = new List<string> { "User:", "<|user|>" },
-            SamplingPipeline = new DefaultSamplingPipeline { Temperature = 1.0f, MinP = 0.05f, RepeatPenalty = 1.3f }
+            AntiPrompts = new List<string> { "<end_of_turn>", "</end_of_turn>" },
+            SamplingPipeline = new DefaultSamplingPipeline
+            {
+                Temperature = 0.7f,
+                MinP = 0.05f,
+                RepeatPenalty = 1.3f,
+                Grammar = new Grammar(GetStoryGrammar(), "root")
+            }
         };
     }
 
     // Starts a new story.
     public async Task WriteIntroduction(string? objectDescription)
     {
+        // Only init session at the start of a story
+        InitSession();
+
         if (objectDescription is null)
         {
             await Generate(
                 "Write exactly the first THREE paragraphs of a children's story. " +
                 "Output only the story. The response must begin with Once upon a time. " +
                 "Do not include introductions, explanations or comments. " +
-                "End your response immediately after the third paragraph.");
+                "End your response immediately after the third paragraph. ");
         }
         else
         {
@@ -134,9 +165,8 @@ public class StoryGenerator
     {
         if (session is null) return;
 
-        // Cancel the previous story and stop its audio.
-        StopStory();
-        InitSession();
+        // Pause the previous story and stop its audio.
+        PauseStory();
 
         _generation = new CancellationTokenSource();
         CancellationToken token = _generation.Token;
@@ -149,8 +179,9 @@ public class StoryGenerator
         try
         {
             var message = new ChatHistory.Message(AuthorRole.User, prompt);
+            var requestParams = CreateInferenceParams();
 
-            await foreach (var chunk in session.ChatAsync(message, inferenceParams, token))
+            await foreach (var chunk in session.ChatAsync(message, requestParams, token))
             {
                 token.ThrowIfCancellationRequested();
 
@@ -160,60 +191,13 @@ public class StoryGenerator
 
                 OnTokenReceived(chunk);
             }
+
             OnGenerationCompleted();
 
         }
         catch (OperationCanceledException)
         {
             // The user moved on to another story.
-        }
-    }
-
-    public async Task WriteStoryFromCharacter(string objectDescription)
-    {
-        if (session is null) return;
-
-        // Cancel the previous story and stop its audio.
-        StopStory();
-        InitSession();
-
-        _generation = new CancellationTokenSource();
-        CancellationToken token = _generation.Token;
-
-        _currentSentence.Clear();
-
-        string input =
-            $"Write a short children's story about this object: {objectDescription}\n\n" +
-            "The object must be the main protagonist.\n" +
-            "Do not write the object description or any kind of introduction.\n" +
-            "The story must be friendly, imaginative and suitable for young children.\n" +
-            "Use exactly 3 paragraphs.\n" +
-            "Use simple language.\n" +
-            "Do not mention that the story was generated from an object description.\n" +
-            "Output only the story. Do not use Markdown or code blocks.";
-
-        string generatedText = "";  //Control
-
-        try
-        {
-            var message = new ChatHistory.Message(AuthorRole.User, input);
-
-            await foreach (var chunk in session.ChatAsync(message, inferenceParams, token))
-            {
-                token.ThrowIfCancellationRequested();
-
-                //Control
-                generatedText += chunk;
-                if (generatedText.Contains("```")) break;
-
-                OnTokenReceived(chunk);
-            }
-
-            OnGenerationCompleted();
-        }
-        catch (OperationCanceledException)
-        {
-            // The user moved on to another story. Nothing to report.
         }
     }
 
@@ -277,8 +261,8 @@ public class StoryGenerator
 
             AntiPrompts = new List<string>
             {
-                "User:",
-                "<|user|>"
+                "<end_of_turn>",
+                "</end_of_turn>"
             },
 
             SamplingPipeline =
@@ -290,42 +274,40 @@ public class StoryGenerator
                 }
         };
 
-        var generated =
-    new StringBuilder();
+        var generated = new StringBuilder();
 
-    try
-    {
-        // Para las preguntas usamos una inferencia
-        // independiente de la historia.
-        var questionExecutor =
-            new StatelessExecutor(
-                _model,
-                _modelParams)
-            {
-                ApplyTemplate = true
-            };
-
-        await foreach (
-            string chunk
-            in questionExecutor.InferAsync(
-                prompt,
-                parameters))
+        try
         {
-            generated.Append(chunk);
+            // Para las preguntas usamos una inferencia
+            // independiente de la historia.
+            var questionExecutor =
+                new StatelessExecutor(
+                    _model,
+                    _modelParams)
+                {
+                    ApplyTemplate = true
+                };
+
+            await foreach (
+                string chunk
+                in questionExecutor.InferAsync(
+                    prompt,
+                    parameters))
+            {
+                generated.Append(chunk);
+            }
         }
-    }
-    catch (Exception ex)
-    {
-        Console.Error.WriteLine(
-            "QUESTION GENERATION ERROR:"
-        );
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(
+                "QUESTION GENERATION ERROR:"
+            );
 
-        Console.Error.WriteLine(ex);
+            Console.Error.WriteLine(ex);
 
-        return questions;
-    }
+            return questions;
+        }
         
-
         string text = generated
             .ToString()
             .Trim();
@@ -341,73 +323,72 @@ public class StoryGenerator
         // pregunta | opción1 | opción2 | opción3 | respuesta
 
         string[] lines = text.Split(
-    '\n',
-    StringSplitOptions.RemoveEmptyEntries
-);
+            '\n',
+            StringSplitOptions.RemoveEmptyEntries);
 
-    foreach (string rawLine in lines)
-    {
-        string line = rawLine.Trim();
-
-        string[] parts =
-            line.Split('|');
-
-        // Ahora esperamos 4 partes:
-        // pregunta | correcta | incorrecta | incorrecta
-        if (parts.Length != 4)
-            continue;
-
-        string question =
-            parts[0].Trim();
-
-        string correct =
-            parts[1].Trim();
-
-        string wrong1 =
-            parts[2].Trim();
-
-        string wrong2 =
-            parts[3].Trim();
-
-        if (string.IsNullOrWhiteSpace(question) ||
-            string.IsNullOrWhiteSpace(correct) ||
-            string.IsNullOrWhiteSpace(wrong1) ||
-            string.IsNullOrWhiteSpace(wrong2))
+        foreach (string rawLine in lines)
         {
-            continue;
-        }
+            string line = rawLine.Trim();
 
-        // Guardamos las opciones junto con si son correctas.
-        var options = new List<(string Text, bool Correct)>
-        {
-            (correct, true),
-            (wrong1, false),
-            (wrong2, false)
-        };
+            string[] parts =
+                line.Split('|');
 
-        // Las mezclamos para que la correcta
-        // no aparezca siempre la primera.
-        options = options
-            .OrderBy(_ => Random.Shared.Next())
-            .ToList();
+            // Ahora esperamos 4 partes:
+            // pregunta | correcta | incorrecta | incorrecta
+            if (parts.Length != 4)
+                continue;
 
-        int correctIndex =
-            options.FindIndex(x => x.Correct);
+            string question =
+                parts[0].Trim();
 
-        questions.Add(
-            new ReadingQuestion
+            string correct =
+                parts[1].Trim();
+
+            string wrong1 =
+                parts[2].Trim();
+
+            string wrong2 =
+                parts[3].Trim();
+
+            if (string.IsNullOrWhiteSpace(question) ||
+                string.IsNullOrWhiteSpace(correct) ||
+                string.IsNullOrWhiteSpace(wrong1) ||
+                string.IsNullOrWhiteSpace(wrong2))
             {
-                Question = question,
-
-                Options = options
-                    .Select(x => x.Text)
-                    .ToList(),
-
-                CorrectAnswer = correctIndex
+                continue;
             }
-        );
-        break;
-    }
+
+            // Guardamos las opciones junto con si son correctas.
+            var options = new List<(string Text, bool Correct)>
+            {
+                (correct, true),
+                (wrong1, false),
+                (wrong2, false)
+            };
+
+            // Las mezclamos para que la correcta
+            // no aparezca siempre la primera.
+            options = options
+                .OrderBy(_ => Random.Shared.Next())
+                .ToList();
+
+            int correctIndex =
+                options.FindIndex(x => x.Correct);
+
+            questions.Add(
+                new ReadingQuestion
+                {
+                    Question = question,
+
+                    Options = options
+                        .Select(x => x.Text)
+                        .ToList(),
+
+                    CorrectAnswer = correctIndex
+                }
+            );
+            break;
+        }
 
         Console.WriteLine(
             $"Parsed questions: {questions.Count}"
@@ -416,8 +397,7 @@ public class StoryGenerator
         return questions;
     }
 
-    // Cancels the story being generated and stops any audio.
-    public void StopStory()
+    public void PauseStory()
     {
         _generation?.Cancel();
         _generation?.Dispose();
@@ -427,7 +407,22 @@ public class StoryGenerator
 
         _currentSentence.Clear();
         _sentences.Clear();
+    }
 
+    // Cancels the story being generated and stops any audio.
+    public void StopStory()
+    {
+        PauseStory();
+        _sentences.Clear();
+        context?.NativeHandle.MemoryClear();
+        context?.Dispose();
+        if(model is not null)
+        {
+            context = model.CreateContext(parameters);
+            executor = new InteractiveExecutor(context);
+        }
+        InitSession();
+        Session.Instance.Reset();
         SentencesChanged?.Invoke(new List<string>());
     }
 

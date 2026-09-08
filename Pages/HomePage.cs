@@ -377,13 +377,15 @@ public class HomePage : ContentPage
 
         if (storyPage == null)
         {
-            Session.Instance.Reset();
             storyPage = new StoryPage();
-            storyPage.StartStory();
         }
+
+        Session.Instance.Reset();
+        StoryGenerator.Instance.StopStory();
 
         if (Navigation is not null)
         {
+            storyPage.StartStory();
             await Navigation.PushAsync(storyPage);
         }
     }

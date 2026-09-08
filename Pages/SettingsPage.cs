@@ -186,7 +186,7 @@ public class SettingsPage : ContentPage
 
         _writingCheckBox = new CheckBox
         {
-            Content = "✏ Writing",
+            Content = "✏️Writing",
             FontSize = 18,
             IsChecked = true,
             Foreground = new SolidColorBrush(Color.Parse("#5940A8"))

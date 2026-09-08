@@ -127,6 +127,7 @@ public class PhotoStoryPage : ContentPage
     // Vuelve a la página anterior (Home)
     private async void FinishButton_Click(object? sender, RoutedEventArgs e)
     {
+        StoryGenerator.Instance.StopStory();
         if(Navigation is not null)
         {
             await Navigation.PopAsync();
@@ -138,6 +139,13 @@ public class PhotoStoryPage : ContentPage
     {
         if (Navigation is null)
         {
+            return;
+        }
+
+        if(Session.Instance.IsFinished)
+        {
+            StoryGenerator.Instance.StopStory();
+            await Navigation.PopAsync();
             return;
         }
 
