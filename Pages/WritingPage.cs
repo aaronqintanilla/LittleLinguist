@@ -150,7 +150,7 @@ public class WritingPage : ContentPage
             FontWeight = FontWeight.Bold,
             Foreground = Brushes.White,
             Background = new SolidColorBrush(
-                Color.Parse("#E98BA5")),
+                Color.Parse("#7956D8")),
             Padding = new Thickness(25, 13),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Center,
@@ -182,19 +182,44 @@ public class WritingPage : ContentPage
         continueButton.Click += ContinueButton_Click;
 
         // =========================================================
+        // BOTÓN FINISH
+        // =========================================================
+
+        var finishButton = new Button
+        {
+            Content = "🏠 Finish",
+            Padding = new Thickness(22, 13),
+            FontSize = 17,
+            FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White,
+            Background = new SolidColorBrush(
+                Color.Parse("#E98BA5")),
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(18),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Center
+        };
+
+        finishButton.Click += FinishButton_Click;
+
+        // =========================================================
         // GRID DE BOTONES
         // =========================================================
 
         var buttonsGrid = new Grid
         {
-            ColumnDefinitions = ColumnDefinitions.Parse("*,*"),
+            ColumnDefinitions =
+                ColumnDefinitions.Parse("*,*,*"),
             ColumnSpacing = 20,
-            HorizontalAlignment = HorizontalAlignment.Stretch
+            HorizontalAlignment =
+                HorizontalAlignment.Stretch
         };
 
-        Grid.SetColumn(clearButton, 0);
-        Grid.SetColumn(continueButton, 1);
+        Grid.SetColumn(finishButton, 0);
+        Grid.SetColumn(clearButton, 1);
+        Grid.SetColumn(continueButton, 2);
 
+        buttonsGrid.Children.Add(finishButton);
         buttonsGrid.Children.Add(clearButton);
         buttonsGrid.Children.Add(continueButton);
 
@@ -262,49 +287,56 @@ public class WritingPage : ContentPage
     private async void ContinueButton_Click(
     object? sender,
     RoutedEventArgs e)
-{
-    // Si ya estamos volviendo a StoryPage,
-    // ignoramos cualquier clic adicional.
-    if (_isCompleting)
-        return;
-
-    double score =
-        _tracingCanvas.CalculateScore();
-
-    if (score >= 0.80)
     {
-        // Desde este momento no permitimos más clics.
-        _isCompleting = true;
+        // Si ya estamos volviendo a StoryPage,
+        // ignoramos cualquier clic adicional.
+        if (_isCompleting)
+            return;
 
-        if (sender is Button button)
+        double score =
+            _tracingCanvas.CalculateScore();
+
+        if (score >= 0.80)
         {
-            button.IsEnabled = false;
+            // Desde este momento no permitimos más clics.
+            _isCompleting = true;
+
+            if (sender is Button button)
+            {
+                button.IsEnabled = false;
+            }
+
+            _feedbackText.Text =
+                $"✅ Great job! Score: {score:P0}";
+
+            await Task.Delay(1200);
+
+            _feedbackText.Text =
+                "📖 Back to the story...";
+
+            await Task.Delay(800);
+
+            if (Navigation is not null)
+            {
+                await Navigation.PopAsync();
+            }
+
+            // Solo se ejecutará UNA vez.
+            _onCompleted?.Invoke();
         }
-
-        _feedbackText.Text =
-            $"✅ Great job! Score: {score:P0}";
-
-        await Task.Delay(1200);
-
-        _feedbackText.Text =
-            "📖 Back to the story...";
-
-        await Task.Delay(800);
-
-        if (Navigation is not null)
+        else
         {
-            await Navigation.PopAsync();
-        }
+            _tracingCanvas.Clear();
 
-        // Solo se ejecutará UNA vez.
-        _onCompleted?.Invoke();
+            _feedbackText.Text =
+                $"✏️ Try again. Write the whole word carefully. Score: {score:P0}";
+        }
     }
-    else
+
+    private void FinishButton_Click(
+        object? sender,
+        RoutedEventArgs e)
     {
-        _tracingCanvas.Clear();
-
-        _feedbackText.Text =
-            $"✏️ Try again. Write the whole word carefully. Score: {score:P0}";
+        //FALTA
     }
-}
 }

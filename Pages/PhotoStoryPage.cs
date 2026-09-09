@@ -118,11 +118,11 @@ public class PhotoStoryPage : ContentPage
         Grid.SetRow(scrollViewer, 1);
 
         // Panel para los botones
-        var buttonPanel = new StackPanel
+        var buttonPanel = new Grid
         {
-            Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Spacing = 15
+            ColumnDefinitions =
+                ColumnDefinitions.Parse("Auto,*,Auto"),
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
 
         // Botón Finish
@@ -202,10 +202,28 @@ public class PhotoStoryPage : ContentPage
         speedPanel.Children.Add(speedLabel);
         speedPanel.Children.Add(speedSlider);
 
-        buttonPanel.Children.Add(playButton);
-        buttonPanel.Children.Add(speedPanel);
+        // Controles centrales: Play + Speed
+        var centerControls = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 15,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        centerControls.Children.Add(playButton);
+        centerControls.Children.Add(speedPanel);
+
+        // Distribución:
+        // Finish | Play + Speed | Next
+        Grid.SetColumn(finishButton, 0);
+        Grid.SetColumn(centerControls, 1);
+        Grid.SetColumn(nextButton, 2);
+
         buttonPanel.Children.Add(finishButton);
+        buttonPanel.Children.Add(centerControls);
         buttonPanel.Children.Add(nextButton);
+
         Grid.SetRow(buttonPanel, 2);
 
         grid.Children.Add(header);
@@ -221,6 +239,7 @@ public class PhotoStoryPage : ContentPage
     // Vuelve a la página anterior (Home)
     private async void FinishButton_Click(object? sender, RoutedEventArgs e)
     {
+        //REVISAR
         StoryGenerator.Instance.StopStory();
         if(Navigation is not null)
         {

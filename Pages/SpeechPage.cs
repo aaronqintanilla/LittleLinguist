@@ -26,7 +26,7 @@ public class SpeechPage : ContentPage
 
         //string modelPath = Path.Combine(
         //AppContext.BaseDirectory,
-       // "models",
+        //"models",
         //"vosk-model-small-en-us-0.15");
 
         string modelPath = $"{System.IO.Directory.GetCurrentDirectory()}/models/vosk-model-small-en-us-0.15";
@@ -37,36 +37,35 @@ public class SpeechPage : ContentPage
         Background = new SolidColorBrush(Color.Parse("#EDE7FF"));
 
         // ---------------------------------------------------------
-        // DECORACIÓN SUPERIOR
+        // DECORACIÓN
         // ---------------------------------------------------------
-
-        var decoration = new Grid
-        {
-            Height = 50
-        };
 
         var stars = new TextBlock
         {
             Text = "✦  ✧  ☆",
-            FontSize = 26,
-            Foreground = new SolidColorBrush(Color.Parse("#FFD966")),
+            FontSize = 20,
+            Foreground = new SolidColorBrush(
+                Color.Parse("#FFD966")),
+
             HorizontalAlignment = HorizontalAlignment.Left,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(15, 0, 0, 0)
+            VerticalAlignment = VerticalAlignment.Bottom,
+
+            Margin = new Thickness(
+                10, 0, 0, 5)
         };
 
         var cloud = new TextBlock
         {
             Text = "☁",
-            FontSize = 42,
+            FontSize = 32,
             Foreground = Brushes.White,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 25, 0)
-        };
 
-        decoration.Children.Add(stars);
-        decoration.Children.Add(cloud);
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Bottom,
+
+            Margin = new Thickness(
+                0, 0, 15, 5)
+        };
 
         // ---------------------------------------------------------
         // TÍTULO
@@ -75,7 +74,7 @@ public class SpeechPage : ContentPage
         var title = new TextBlock
         {
             Text = "🗣 Pronunciation",
-            FontSize = 32,
+            FontSize = 26,
             FontWeight = FontWeight.Bold,
             Foreground = new SolidColorBrush(Color.Parse("#6846C7")),
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -89,7 +88,7 @@ public class SpeechPage : ContentPage
         var wordText = new TextBlock
         {
             Text = targetWord,
-            FontSize = 48,
+            FontSize = 36,
             FontWeight = FontWeight.Bold,
             Foreground = new SolidColorBrush(Color.Parse("#465477")),
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -101,8 +100,8 @@ public class SpeechPage : ContentPage
             Background = Brushes.White,
             BorderBrush = new SolidColorBrush(Color.Parse("#C9BBF5")),
             BorderThickness = new Thickness(3),
-            CornerRadius = new CornerRadius(25),
-            Padding = new Thickness(35, 20),
+            CornerRadius = new CornerRadius(20),
+            Padding = new Thickness(25, 12),
             HorizontalAlignment = HorizontalAlignment.Center,
             Child = wordText
         };
@@ -114,11 +113,11 @@ public class SpeechPage : ContentPage
         var playButton = new Button
         {
             Content = "🔊 Hear the word",
-            FontSize = 20,
+            FontSize = 17,
             FontWeight = FontWeight.Bold,
             Foreground = Brushes.White,
             Background = new SolidColorBrush(Color.Parse("#7956D8")),
-            Padding = new Thickness(25, 15),
+            Padding = new Thickness(18, 10),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Center,
             CornerRadius = new CornerRadius(18)
@@ -150,7 +149,7 @@ public class SpeechPage : ContentPage
         var speedLabel = new TextBlock
         {
             Text = "🐢  Speed  🐇",
-            FontSize = 15,
+            FontSize = 13,
             FontWeight = FontWeight.Bold,
             Foreground = new SolidColorBrush(
                 Color.Parse("#55729A")),
@@ -174,11 +173,11 @@ public class SpeechPage : ContentPage
         var speakButton = new Button
         {
             Content = "🎤 Speak",
-            FontSize = 20,
+            FontSize = 17,
             FontWeight = FontWeight.Bold,
             Foreground = Brushes.White,
             Background = new SolidColorBrush(Color.Parse("#65B8E8")),
-            Padding = new Thickness(25, 15),
+            Padding = new Thickness(18, 10),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Center,
             CornerRadius = new CornerRadius(18)
@@ -187,13 +186,44 @@ public class SpeechPage : ContentPage
         speakButton.Click += SpeakButton_Click;
 
         // ---------------------------------------------------------
+        // FINISH
+        // ---------------------------------------------------------
+
+        var finishButton = new Button
+        {
+            Content = "🏠 Finish",
+
+            Padding = new Thickness(18, 10),
+
+            FontSize = 15,
+            FontWeight = FontWeight.Bold,
+
+            Foreground = Brushes.White,
+
+            Background = new SolidColorBrush(
+                Color.Parse("#E98BA5")),
+
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(18),
+
+            HorizontalAlignment =
+                HorizontalAlignment.Center,
+
+            VerticalAlignment =
+                VerticalAlignment.Center
+        };
+
+        finishButton.Click +=
+            FinishButton_Click;
+
+        // ---------------------------------------------------------
         // RESULTADO
         // ---------------------------------------------------------
 
         resultText = new TextBlock
         {
             Text = "",
-            FontSize = 20,
+            FontSize = 17,
             Foreground = new SolidColorBrush(Color.Parse("#55729A")),
             TextAlignment = TextAlignment.Center,
             TextWrapping = TextWrapping.Wrap,
@@ -205,8 +235,8 @@ public class SpeechPage : ContentPage
             Background = Brushes.White,
             BorderBrush = new SolidColorBrush(Color.Parse("#C9BBF5")),
             BorderThickness = new Thickness(2),
-            CornerRadius = new CornerRadius(20),
-            Padding = new Thickness(20, 15),
+            CornerRadius = new CornerRadius(18),
+            Padding = new Thickness(15, 10),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Child = resultText
         };
@@ -217,7 +247,7 @@ public class SpeechPage : ContentPage
 
         var listenPanel = new StackPanel
         {
-            Spacing = 18,
+            Spacing = 10,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -225,21 +255,19 @@ public class SpeechPage : ContentPage
         listenPanel.Children.Add(playButton);
         listenPanel.Children.Add(speedPanel);
 
-
         // ---------------------------------------------------------
         // PANEL DERECHO: HABLAR
         // ---------------------------------------------------------
 
         var speakPanel = new StackPanel
         {
-            Spacing = 18,
+            Spacing = 10,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Center
         };
 
         speakPanel.Children.Add(speakButton);
         speakPanel.Children.Add(resultBorder);
-
 
         // ---------------------------------------------------------
         // EJERCICIO: DOS COLUMNAS
@@ -248,10 +276,10 @@ public class SpeechPage : ContentPage
         var exerciseGrid = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("*,*"),
-            ColumnSpacing = 30,
+            ColumnSpacing = 15,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(20)
+            Margin = new Thickness(10)
         };
 
         Grid.SetColumn(listenPanel, 0);
@@ -260,22 +288,19 @@ public class SpeechPage : ContentPage
         exerciseGrid.Children.Add(listenPanel);
         exerciseGrid.Children.Add(speakPanel);
 
-
         // ---------------------------------------------------------
-        // CONTENIDO CENTRAL
+        // CONTENIDO SUPERIOR
         // ---------------------------------------------------------
 
-        var contentPanel = new StackPanel
+        var topPanel = new StackPanel
         {
-            Spacing = 20,
+            Spacing = 10,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        contentPanel.Children.Add(title);
-        contentPanel.Children.Add(wordBorder);
-        contentPanel.Children.Add(exerciseGrid);
-
+        topPanel.Children.Add(title);
+        topPanel.Children.Add(wordBorder);
 
         // ---------------------------------------------------------
         // GRID PRINCIPAL
@@ -283,15 +308,21 @@ public class SpeechPage : ContentPage
 
         var mainGrid = new Grid
         {
-            Margin = new Thickness(35, 20),
-            RowDefinitions = RowDefinitions.Parse("Auto,*")
+            Margin = new Thickness(25, 15),
+            RowDefinitions = RowDefinitions.Parse("Auto,*,Auto")
         };
 
-        Grid.SetRow(decoration, 0);
-        Grid.SetRow(contentPanel, 1);
+        Grid.SetRow(topPanel, 0);
+        Grid.SetRow(exerciseGrid, 1);
+        Grid.SetRow(finishButton, 2);
 
-        mainGrid.Children.Add(decoration);
-        mainGrid.Children.Add(contentPanel);
+        mainGrid.Children.Add(topPanel);
+        mainGrid.Children.Add(exerciseGrid);
+        mainGrid.Children.Add(finishButton);
+
+        // Decoración por encima del fondo, sin ocupar filas.
+        mainGrid.Children.Add(stars);
+        mainGrid.Children.Add(cloud);
 
         Content = mainGrid;
     }
@@ -430,5 +461,12 @@ public class SpeechPage : ContentPage
                 resultText.Text = "🔊 Playing...";
             }
         });
+    }
+
+    private void FinishButton_Click(
+        object? sender,
+        RoutedEventArgs e)
+    {
+        //FALTA
     }
 }

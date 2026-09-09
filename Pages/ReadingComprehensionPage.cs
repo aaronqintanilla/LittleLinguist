@@ -212,6 +212,53 @@ public class ReadingComprehensionPage : ContentPage
         ContinueButton_Click;
 
     // ---------------------------------------------------------
+    // FINISH
+    // ---------------------------------------------------------
+
+    var finishButton =
+        new Button
+        {
+            Content = "🏠 Finish",
+
+            Padding =
+                new Thickness(
+                    22,
+                    13
+                ),
+
+            FontSize = 17,
+
+            FontWeight =
+                FontWeight.Bold,
+
+            Foreground =
+                Brushes.White,
+
+            Background =
+                new SolidColorBrush(
+                    Color.Parse("#E98BA5")
+                ),
+
+            BorderThickness =
+                new Thickness(0),
+
+            CornerRadius =
+                new CornerRadius(18),
+
+            HorizontalAlignment =
+                HorizontalAlignment.Left,
+
+            VerticalAlignment =
+                VerticalAlignment.Bottom,
+
+            Margin =
+                new Thickness(0, 0, 0, 10)
+        };
+
+    finishButton.Click +=
+        FinishButton_Click;
+
+    // ---------------------------------------------------------
     // TARJETA DE LA PREGUNTA
     // ---------------------------------------------------------
 
@@ -461,6 +508,10 @@ public class ReadingComprehensionPage : ContentPage
     );
 
     mainGrid.Children.Add(
+        finishButton
+    );
+
+    mainGrid.Children.Add(
         centerPanel
     );
 
@@ -698,5 +749,12 @@ private async Task LoadQuestions(
 
         // Continúa la historia.
         _onCompleted?.Invoke();
+    }
+
+    private void FinishButton_Click(
+        object? sender,
+        RoutedEventArgs e)
+    {
+        //FALTA
     }
 }
