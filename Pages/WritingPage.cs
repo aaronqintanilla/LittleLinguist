@@ -181,6 +181,23 @@ public class WritingPage : ContentPage
 
         continueButton.Click += ContinueButton_Click;
 
+        var skipButton = new Button
+        {
+            Content = "SKIP",
+            FontSize = 18,
+            FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White,
+            Background = new SolidColorBrush(
+                Color.Parse("#65B8E8")),
+            Padding = new Thickness(25, 13),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(18)
+        };
+
+        skipButton.Click += SkipButton_Click;
+
         // =========================================================
         // BOTÓN FINISH
         // =========================================================
@@ -222,6 +239,7 @@ public class WritingPage : ContentPage
         buttonsGrid.Children.Add(finishButton);
         buttonsGrid.Children.Add(clearButton);
         buttonsGrid.Children.Add(continueButton);
+        buttonsGrid.Children.Add(skipButton);
 
         // =========================================================
         // CABECERA
@@ -278,6 +296,16 @@ public class WritingPage : ContentPage
     {
         _tracingCanvas.Clear();
         _feedbackText.Text = "";
+    }
+
+    private async void SkipButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (Navigation is not null)
+        {
+            await Navigation.PopAsync();
+        }
+
+        _onCompleted?.Invoke();
     }
 
     // ---------------------------------------------------------

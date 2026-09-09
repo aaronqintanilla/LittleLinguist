@@ -1,19 +1,13 @@
-using Avalonia.Controls;
 using System;
 using System.Collections.Generic;
 using LLama;
 using LLama.Common;
 using LLama.Sampling;
-using LLama.Native;
-using Llama.Grammar;
 using System.Threading.Tasks;
 using System.Text;
-using Avalonia.Threading;
 using System.Threading;
-using System.Text.Json;
 using LittleLinguist;
 using System.Linq;
-using Llama.Grammar.Service;
 using LLama.Transformers;
 
 /*
@@ -37,25 +31,20 @@ public class StoryGenerator
     private readonly List<string> _sentences = new();
 
     private LLamaWeights? model;
-    private ModelParams parameters;
+    private ModelParams? parameters;
 
     // Cancels the story currently being generated.
     private CancellationTokenSource? _generation;
 
-
-
     InteractiveExecutor? executor;
-
-    private LLamaWeights? _model;
-    private ModelParams? _modelParams;
     
     void InitSession()
     {
         if (executor is null) throw new NullReferenceException("Interactive Executor is null");
         if (model is null) throw new NullReferenceException("Model is null");
         session = new ChatSession(executor);
-        session.AddSystemMessage("You write warm, simple and coherent children's stories. " +
-            "Never mention prompts, instructions, paragraphs, models, generation, or story structure. Output narrative prose only.");
+        //session.AddSystemMessage("You write warm, simple and coherent children's stories. " +
+            //"Never mention prompts, instructions, paragraphs, models, generation, or story structure. Output narrative prose only.");
         session.WithHistoryTransform(
             new PromptTemplateTransformer(model, withAssistant: true)
         );
@@ -68,7 +57,7 @@ public class StoryGenerator
 
         parameters = new ModelParams(modelPath)
         {
-            ContextSize = 2048,
+            ContextSize = 8192,
             GpuLayerCount = 0
         };
 
@@ -84,12 +73,9 @@ public class StoryGenerator
     public string GetStoryGrammar()
     {
         return """
-            root ::= paragraph "\n\n" paragraph "\n\n" paragraph
+            root ::= paragraph "\n\n" paragraph "\n\n" paragraph "\n"*
 
-            paragraph ::= first-char other-char*
-
-            first-char ::= [^ \t\n<\\]
-            other-char ::= [^\n<\\]
+            paragraph ::= [^\r\n]+
             """;
     }
 
@@ -98,15 +84,37 @@ public class StoryGenerator
         return new InferenceParams
         {
             MaxTokens = 400,
-            AntiPrompts = new List<string> { "<end_of_turn>", "</end_of_turn>" },
+            //AntiPrompts = new List<string> { "<end_of_turn>", "</end_of_turn>", "<|im_end|>" },
             SamplingPipeline = new DefaultSamplingPipeline
             {
                 Temperature = 0.7f,
                 MinP = 0.05f,
-                RepeatPenalty = 1.3f,
+                RepeatPenalty = 1.1f,
                 Grammar = new Grammar(GetStoryGrammar(), "root")
             }
         };
+    }
+
+    public void DebugPrintChatHistory()
+    {
+        if (session is null)
+        {
+            Console.WriteLine("[DEBUG] Session is null.");
+            return;
+        }
+
+        Console.WriteLine("\n=================== CHAT SESSION HISTORY DEBUG ===================");
+        
+        int messageIndex = 0;
+        foreach (var message in session.History.Messages)
+        {
+            Console.WriteLine($"\n--- [Msg #{messageIndex++}] Role: {message.AuthorRole} ---");
+            
+            // Print the message text
+            Console.WriteLine(message.Content);
+        }
+
+        Console.WriteLine("\n==================================================================\n");
     }
 
     // Starts a new story.
@@ -122,6 +130,7 @@ public class StoryGenerator
                 "Output only the story. The response must begin with Once upon a time. " +
                 "Do not include introductions, explanations or comments. " +
                 "End your response immediately after the third paragraph. ");
+            //await Generate("Write a children's story in three paragraphs. Start with Once upon a time.");
         }
         else
         {
@@ -139,23 +148,37 @@ public class StoryGenerator
     // Continues the story without closing it. Can be called many times.
     public async Task WriteMiddle()
     {
+        InitSession();
+        string storyContext = string.Join("\n\n", _sentences);
+
         await Generate(
+            "Here's the story so far:\n\n" +
+            storyContext +
+            "\n\n" +
             "Continue the previous story with exactly THREE more paragraphs. " +
             "Do not end the story: leave it open for more to happen. " +
             "Output only the story. Do not repeat what you already wrote. " +
             "Do not include introductions, explanations or comments. " +
             "End your response immediately after the third paragraph.");
+        //await Generate("Continue the previous story with three more paragraphs. Leave it open for the conclusion.");
     }
 
     // Brings the story to an end.
     public async Task WriteEnding()
     {
+        InitSession();
+        string storyContext = string.Join("\n\n", _sentences);
+
         await Generate(
+            "Here's the story so far:\n\n" +
+            storyContext +
+            "\n\n" +
             "Write the final THREE paragraphs of the story. " +
             "Bring it to a happy and satisfying ending. " +
             "Output only the story. Do not repeat what you already wrote. " +
             "Do not include introductions, explanations or comments. " +
             "End your response immediately after the third paragraph.");
+        //await Generate("Write the conclusion to the story in three paragraphs.");
     }
 
     // Generates a story and writes it on screen token by token,
@@ -172,8 +195,17 @@ public class StoryGenerator
 
         string generatedText = "";  //Control
 
-        Console.WriteLine("----- PROMPT -----");
-        Console.WriteLine(prompt);
+        int tokens = 0;
+        foreach (var message in session.History.Messages)
+        {
+            foreach (var chunk in message.Content)
+            {
+                tokens++;
+            }
+        }
+
+        //Console.WriteLine("----- PROMPT -----");
+        //Console.WriteLine(prompt);
 
         try
         {
@@ -185,8 +217,8 @@ public class StoryGenerator
                 token.ThrowIfCancellationRequested();
 
                 generatedText += chunk;
-                if (generatedText.Contains("```"))
-                    break;
+                //if (generatedText.Contains("```"))
+                    //break;
 
                 OnTokenReceived(chunk);
             }
@@ -198,6 +230,9 @@ public class StoryGenerator
         {
             // The user moved on to another story.
         }
+
+        DebugPrintChatHistory();
+        Console.WriteLine("CURRENT TOKEN COUNT: " + tokens);
     }
 
    public async Task<List<ReadingQuestion>> GenerateReadingQuestions(
@@ -220,8 +255,7 @@ public class StoryGenerator
         Console.WriteLine("----- STORY FOR QUESTIONS -----");
         Console.WriteLine(story);
 
-        if (_model is null ||
-        _modelParams is null)
+        if (model is null || parameters is null)
         {
             Console.Error.WriteLine(
                 "Language model is not loaded."
@@ -254,7 +288,7 @@ public class StoryGenerator
             "BAD example - do NOT do this:\n" +
             "Where did Mia live?|In the forest|The Green Forest|She lived in the forest\n";
 
-        var parameters = new InferenceParams
+        var questionInfParams = new InferenceParams
         {
             MaxTokens = 70,
 
@@ -281,8 +315,8 @@ public class StoryGenerator
             // independiente de la historia.
             var questionExecutor =
                 new StatelessExecutor(
-                    _model,
-                    _modelParams)
+                    model,
+                    parameters)
                 {
                     ApplyTemplate = true
                 };
@@ -291,7 +325,7 @@ public class StoryGenerator
                 string chunk
                 in questionExecutor.InferAsync(
                     prompt,
-                    parameters))
+                    questionInfParams))
             {
                 generated.Append(chunk);
             }
@@ -415,7 +449,7 @@ public class StoryGenerator
         _sentences.Clear();
         context?.NativeHandle.MemoryClear();
         context?.Dispose();
-        if(model is not null)
+        if(model is not null && parameters is not null)
         {
             context = model.CreateContext(parameters);
             executor = new InteractiveExecutor(context);

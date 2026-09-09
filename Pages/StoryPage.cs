@@ -245,13 +245,13 @@ public class StoryPage : ContentPage
             return;
         }
 
-        if(Session.Instance.IsFinished)
+        /*if(Session.Instance.IsFinished)
         {
             Console.WriteLine("Fin de la historia");
             StoryGenerator.Instance.StopStory();
             await Navigation.PopAsync();
             return;
-        }
+        }*/
 
         // Guardamos el texto antes de parar, porque StopStory
         // vacía la lista de frases.
@@ -306,15 +306,23 @@ public class StoryPage : ContentPage
                 break;
         }
 
-    cont++;
+        cont++;
 
-    await Navigation.PushAsync(page);
+        await Navigation.PushAsync(page);
 
         //BUG: await Navigation.PushAsync(new WritingPage(randomWord, StartStory));
     }
 
     public async void StartStory()
     {
+        if(Session.Instance.IsFinished && Navigation is not null)
+        {
+            StoryGenerator.Instance.StopStory();
+            cont = 0;
+            await Navigation.PopAsync();
+            return;
+        }
+
         await Session.Instance.WriteNextPart(null);
     }
 
