@@ -383,7 +383,7 @@ public class SpeechPage : ContentPage
 
         if (string.IsNullOrWhiteSpace(recognizedText))
         {
-            resultText.Text = "🎤 No speech detected. Try again!";
+            resultText.Text = $"🎤 No speech detected.\n Try again!";
             return;
         }
 
@@ -409,7 +409,8 @@ public class SpeechPage : ContentPage
         }
         else
         {
-            resultText.Text += "\n❌ Try again!";
+            resultText.Text =
+                $"❌ Incorrect.\n Try again!";
         }
     }
     catch (Exception ex)
