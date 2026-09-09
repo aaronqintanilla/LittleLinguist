@@ -1,18 +1,6 @@
 using System;
 using System.Threading.Tasks;
 
-/*
-FALTA:
-1. usar el finished para que ya no lleve a storyPage, si no a homePage y reiniciar todo:
-
-        if (Session.Instance.IsFinished)
-        {
-            // La historia ha terminado: volvemos al inicio.
-            await Navigation.PopAsync();
-            return;
-        }
-*/
-
 // Keeps track of how far along the story is, so no page needs
 // to know which part comes next.
 public class Session
@@ -33,6 +21,7 @@ public class Session
     // Generates whichever part comes next.
     public async Task WriteNextPart(string? objectDescription)
     {
+        Console.WriteLine($"Parte {_partsWritten}");
         switch (_partsWritten)
         {
             case 0:

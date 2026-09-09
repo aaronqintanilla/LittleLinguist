@@ -14,11 +14,8 @@ using Avalonia.Threading;
 
 /*
 FALTA:
-1. elegir pregunta ¿aleatoriamente? e ir a esa página (hacer el next button) -> cambiar según la competencia
-2. cambiar el diseño de la interfaz
-3. que cada vez que se vuelva a esta pagina le pida mas texto al StoryGenerator
-4. al hacer finish, que vuelva a HomePage y se reinicie todo
-5. la barra no deja ver todo el texto, no baja del todo
+1. cambiar pruebas a las que ir según la competencia
+2. historias diferentes
 */
 
 public class StoryPage : ContentPage
@@ -35,79 +32,176 @@ public class StoryPage : ContentPage
     public StoryPage()
     {
         NavigationPage.SetHasBackButton(this, false);
+        Background = new SolidColorBrush(Color.Parse("#EDE7FF"));
         
         // Grid principal
-        var grid = new Grid();
-        grid.Margin = new Thickness(25);
+        var grid = new Grid
+        {
+            Margin = new Thickness(35, 20)
+        };
+        grid.RowDefinitions.Add(
+            new RowDefinition(GridLength.Auto));
+        grid.RowDefinitions.Add(
+            new RowDefinition(GridLength.Star));
+        grid.RowDefinitions.Add(
+            new RowDefinition(GridLength.Auto));
 
-        // Dos filas
-        grid.RowDefinitions.Add(new RowDefinition(GridLength.Star));
-        grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        // Decoración
+        var header = new Grid
+        {
+            Height = 80
+        };
+
+        var starsLeft = new TextBlock
+        {
+            Text = "✦  ✧",
+            FontSize = 30,
+            Foreground = new SolidColorBrush(
+                Color.Parse("#FFD966")),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var title = new TextBlock
+        {
+            Text = "📖",
+            FontSize = 34,
+            FontWeight = FontWeight.Bold,
+            Foreground = new SolidColorBrush(
+                Color.Parse("#6846C7")),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var starsRight = new TextBlock
+        {
+            Text = "✧  ✦",
+            FontSize = 30,
+            Foreground = new SolidColorBrush(
+                Color.Parse("#FFD966")),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        header.Children.Add(starsLeft);
+        header.Children.Add(title);
+        header.Children.Add(starsRight);
+
+        Grid.SetRow(header, 0);
 
         // Texto de la historia
         storyText.TextWrapping = TextWrapping.Wrap;
-        storyText.FontSize = 18;
+        storyText.FontSize = 19;
+        storyText.Foreground = new SolidColorBrush(
+            Color.Parse("#465477"));
 
         // Scroll para el texto
-        var scrollViewer = new ScrollViewer();
-        scrollViewer.Content = storyText;
-        scrollViewer.BorderThickness = new Thickness(2);
-        scrollViewer.Padding = new Thickness(15);
-        scrollViewer.Margin = new Thickness(0, 0, 0, 20);
+        var scrollViewer = new ScrollViewer
+        {
+            Content = storyText,
+            Padding = new Thickness(25),
+            Background = Brushes.White,
+            BorderBrush = new SolidColorBrush(
+                Color.Parse("#C9BBF5")),
+            BorderThickness = new Thickness(3),
+            CornerRadius = new CornerRadius(25),
+            Margin = new Thickness(0, 5, 0, 20)
+        };
 
-        Grid.SetRow(scrollViewer, 0);
+        Grid.SetRow(scrollViewer, 1);
 
         // Panel para los botones
-        var buttonPanel = new StackPanel();
-        buttonPanel.Orientation = Orientation.Horizontal;
-        buttonPanel.HorizontalAlignment = HorizontalAlignment.Center;
-        buttonPanel.Spacing = 20;
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Spacing = 15
+        };
 
         // Botón Finish
-        var finishButton = new Button();
-        finishButton.Content = "Finish Session";
-        finishButton.Padding = new Thickness(20, 10);
+        var finishButton = new Button
+        {
+            Content = "🏠 Finish",
+            Padding = new Thickness(22, 13),
+            FontSize = 17,
+            FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White,
+            Background = new SolidColorBrush(
+                Color.Parse("#E98BA5")),
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(18)
+        };
 
         finishButton.Click += FinishButton_Click;
 
         // Botón Next
-        var nextButton = new Button();
-        nextButton.Content = "Next";
-        nextButton.Padding = new Thickness(20, 10);
+        var nextButton = new Button
+        {
+            Content = "⭐ Next",
+            Padding = new Thickness(22, 13),
+            FontSize = 17,
+            FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White,
+            Background = new SolidColorBrush(
+                Color.Parse("#65B8E8")),
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(18)
+        };
 
         nextButton.Click += NextButton_Click;
 
         // Botón Play / Pause
-        playButton.Content = "Play";
-        playButton.Padding = new Thickness(20, 10);
+        playButton.Content = "▶ Play";
+        playButton.Padding = new Thickness(22, 13);
+        playButton.FontSize = 17;
+        playButton.FontWeight = FontWeight.Bold;
+        playButton.Foreground = Brushes.White;
+        playButton.Background = new SolidColorBrush(
+            Color.Parse("#7956D8"));
+        playButton.BorderThickness = new Thickness(0);
+        playButton.CornerRadius = new CornerRadius(18);
+
         playButton.Click += PlayButton_Click;
 
         // Slider de velocidad: a la derecha, más rápido
-        var speedSlider = new Slider();
-        speedSlider.Minimum = 0.5;
-        speedSlider.Maximum = 2.5;
-        speedSlider.Value = 1.5;
-        speedSlider.Width = 200;
-        speedSlider.TickFrequency = 0.1;
-        speedSlider.IsSnapToTickEnabled = true;
+        var speedSlider = new Slider
+        {
+            Minimum = 0.5,
+            Maximum = 2.5,
+            Value = 1.5,
+            Width = 160,
+            TickFrequency = 0.1,
+            IsSnapToTickEnabled = true
+        };
+
         speedSlider.ValueChanged += SpeedSlider_ValueChanged;
 
-        var speedLabel = new TextBlock();
-        speedLabel.Text = "Speed";
-        speedLabel.VerticalAlignment = VerticalAlignment.Center;
+        var speedLabel = new TextBlock
+        {
+            Text = "🐢  Speed  🐇",
+            FontSize = 15,
+            FontWeight = FontWeight.Bold,
+            Foreground = new SolidColorBrush(
+                Color.Parse("#55729A")),
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
 
-        var speedPanel = new StackPanel();
-        speedPanel.Orientation = Orientation.Horizontal;
-        speedPanel.Spacing = 10;
-        speedPanel.VerticalAlignment = VerticalAlignment.Center;
+        var speedPanel = new StackPanel
+        {
+            Spacing = 2,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
         speedPanel.Children.Add(speedLabel);
         speedPanel.Children.Add(speedSlider);
+
         buttonPanel.Children.Add(playButton);
         buttonPanel.Children.Add(speedPanel);
         buttonPanel.Children.Add(finishButton);
         buttonPanel.Children.Add(nextButton);
-        Grid.SetRow(buttonPanel, 1);
+        Grid.SetRow(buttonPanel, 2);
 
+        grid.Children.Add(header);
         grid.Children.Add(scrollViewer);
         grid.Children.Add(buttonPanel);
 
@@ -137,6 +231,7 @@ public class StoryPage : ContentPage
 
         if(Session.Instance.IsFinished)
         {
+            Console.WriteLine("Fin de la historia");
             StoryGenerator.Instance.StopStory();
             await Navigation.PopAsync();
             return;
@@ -189,7 +284,8 @@ public class StoryPage : ContentPage
 
             default:
                 page = new SpeechPage(
-                    randomWord
+                    randomWord,
+                    StartStory
                 );
                 break;
         }

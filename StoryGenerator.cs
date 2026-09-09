@@ -19,7 +19,6 @@ using LLama.Transformers;
 /*
 FALTA:
 1. base de datos para que cambie la historia, siempre es repetitiva
-2. que genere diferentes momentos de la historia segun en que fase estamos: inicio, nudo, desenlace? -> mejorarlos NO VA AGHHHH !!!
 */
 
 public class StoryGenerator

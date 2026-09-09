@@ -9,12 +9,6 @@ using System;
 
 namespace LittleLinguist.Pages;
 
-/*
-FALTA:
-1. al hacer finish (añadir boton para cerrar sesion de aprendizaje), que vuelva a HomePage y se reinicie todo
-2. cambiar el diseño ajustandolo al resto
-*/
-
 public class WritingPage : ContentPage
 {
     private readonly TracingCanvas _tracingCanvas;
@@ -27,96 +21,169 @@ public class WritingPage : ContentPage
         _onCompleted = onCompleted;
         NavigationPage.SetHasBackButton(this, false);
 
-        // ---------------------------------------------------------
+        // =========================================================
+        // FONDO
+        // =========================================================
+
+        Background = new SolidColorBrush(
+            Color.Parse("#EDE7FF"));
+
+        // =========================================================
         // TÍTULO
-        // ---------------------------------------------------------
+        // =========================================================
 
         var title = new TextBlock
         {
-            Text = "Writing practice",
-            FontSize = 32,
+            Text = "✏️ Writing Practice",
+            FontSize = 34,
             FontWeight = FontWeight.Bold,
+            Foreground = new SolidColorBrush(
+                Color.Parse("#6846C7")),
             TextAlignment = TextAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
         };
 
-        // ---------------------------------------------------------
+        // =========================================================
+        // DECORACIÓN
+        // =========================================================
+
+        var decoration = new Grid
+        {
+            Height = 40
+        };
+
+        var starsLeft = new TextBlock
+        {
+            Text = "✦  ✧",
+            FontSize = 28,
+            Foreground = new SolidColorBrush(
+                Color.Parse("#FFD966")),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var starsRight = new TextBlock
+        {
+            Text = "✧  ✦",
+            FontSize = 28,
+            Foreground = new SolidColorBrush(
+                Color.Parse("#FFD966")),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        decoration.Children.Add(starsLeft);
+        decoration.Children.Add(starsRight);
+
+        // =========================================================
         // INSTRUCCIONES
-        // ---------------------------------------------------------
+        // =========================================================
 
         var instructions = new TextBlock
         {
-            Text = "Trace the word with your finger or digital pen.",
+            Text = "Trace the word with your finger or digital pen ✨",
             FontSize = 18,
+            Foreground = new SolidColorBrush(
+                Color.Parse("#55729A")),
             TextAlignment = TextAlignment.Center,
             TextWrapping = TextWrapping.Wrap,
             HorizontalAlignment = HorizontalAlignment.Center
         };
 
-        // ---------------------------------------------------------
+        // =========================================================
         // ZONA TÁCTIL
-        // ---------------------------------------------------------
+        // =========================================================
 
         _tracingCanvas = new TracingCanvas
         {
             TargetWord = word.ToUpperInvariant(),
 
-            // Ya no tiene una altura fija.
-            // Ocupará el espacio restante de la ventana.
             MinHeight = 160,
 
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch
         };
 
-        // ---------------------------------------------------------
+        // =========================================================
+        // TARJETA DEL ÁREA DE ESCRITURA
+        // =========================================================
+
+        var canvasBorder = new Border
+        {
+            Background = Brushes.White,
+            BorderBrush = new SolidColorBrush(
+                Color.Parse("#C9BBF5")),
+            BorderThickness = new Thickness(3),
+            CornerRadius = new CornerRadius(25),
+            Padding = new Thickness(15),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
+            Child = _tracingCanvas
+        };
+
+        // =========================================================
         // MENSAJE
-        // ---------------------------------------------------------
+        // =========================================================
 
         _feedbackText = new TextBlock
         {
             Text = "",
-            FontSize = 18,
+            FontSize = 19,
             FontWeight = FontWeight.SemiBold,
+            Foreground = new SolidColorBrush(
+                Color.Parse("#55729A")),
             TextAlignment = TextAlignment.Center,
             TextWrapping = TextWrapping.Wrap,
-            HorizontalAlignment = HorizontalAlignment.Stretch
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Center
         };
 
-        // ---------------------------------------------------------
+        // =========================================================
         // BOTÓN CLEAR
-        // ---------------------------------------------------------
+        // =========================================================
 
         var clearButton = new Button
         {
-            Content = "Clear",
+            Content = "🗑 Clear",
             FontSize = 18,
-            Padding = new Thickness(25, 12),
+            FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White,
+            Background = new SolidColorBrush(
+                Color.Parse("#E98BA5")),
+            Padding = new Thickness(25, 13),
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Center
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(18)
         };
 
         clearButton.Click += ClearButton_Click;
 
-        // ---------------------------------------------------------
+        // =========================================================
         // BOTÓN CONTINUE
-        // ---------------------------------------------------------
+        // =========================================================
 
         var continueButton = new Button
         {
-            Content = "Continue",
+            Content = "⭐ Continue",
             FontSize = 18,
             FontWeight = FontWeight.Bold,
-            Padding = new Thickness(25, 12),
+            Foreground = Brushes.White,
+            Background = new SolidColorBrush(
+                Color.Parse("#65B8E8")),
+            Padding = new Thickness(25, 13),
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Center
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(18)
         };
 
         continueButton.Click += ContinueButton_Click;
 
-        // ---------------------------------------------------------
+        // =========================================================
         // GRID DE BOTONES
-        // ---------------------------------------------------------
+        // =========================================================
 
         var buttonsGrid = new Grid
         {
@@ -131,38 +198,48 @@ public class WritingPage : ContentPage
         buttonsGrid.Children.Add(clearButton);
         buttonsGrid.Children.Add(continueButton);
 
-        // ---------------------------------------------------------
+        // =========================================================
+        // CABECERA
+        // =========================================================
+
+        var header = new Grid
+        {
+            Height = 80
+        };
+
+        Grid.SetRow(decoration, 0);
+        Grid.SetRow(title, 0);
+
+        header.Children.Add(decoration);
+        header.Children.Add(title);
+
+        // =========================================================
         // GRID PRINCIPAL
-        // ---------------------------------------------------------
+        // =========================================================
 
         var mainGrid = new Grid
         {
-            Margin = new Thickness(30),
+            Margin = new Thickness(35, 15),
 
-            // Título: altura automática.
-            // Instrucciones: altura automática.
-            // Canvas: ocupa todo el espacio restante.
-            // Mensaje: altura automática.
-            // Botones: altura automática.
             RowDefinitions =
-                RowDefinitions.Parse("Auto,Auto,*,Auto,Auto"),
+                RowDefinitions.Parse(
+                    "Auto,Auto,*,Auto,Auto"),
 
-            RowSpacing = 20
+            RowSpacing = 15
         };
 
-        Grid.SetRow(title, 0);
+        Grid.SetRow(header, 0);
         Grid.SetRow(instructions, 1);
-        Grid.SetRow(_tracingCanvas, 2);
+        Grid.SetRow(canvasBorder, 2);
         Grid.SetRow(_feedbackText, 3);
         Grid.SetRow(buttonsGrid, 4);
 
-        mainGrid.Children.Add(title);
+        mainGrid.Children.Add(header);
         mainGrid.Children.Add(instructions);
-        mainGrid.Children.Add(_tracingCanvas);
+        mainGrid.Children.Add(canvasBorder);
         mainGrid.Children.Add(_feedbackText);
         mainGrid.Children.Add(buttonsGrid);
 
-        // No utilizamos ScrollViewer.
         Content = mainGrid;
     }
 

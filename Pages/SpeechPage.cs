@@ -17,10 +17,12 @@ public class SpeechPage : ContentPage
 
     private readonly SpeechRecognizer speechRecognizer;
     private TextBlock resultText;
+    private readonly Action? _onCompleted;
 
-    public SpeechPage(string word)
+    public SpeechPage(string word, Action? onCompleted = null)
     {
         targetWord = word;
+        _onCompleted = onCompleted;
 
         //string modelPath = Path.Combine(
         //AppContext.BaseDirectory,
@@ -32,16 +34,52 @@ public class SpeechPage : ContentPage
         speechRecognizer = new SpeechRecognizer(modelPath);
         SpeechReader.Instance.SentenceChanged += OnSentenceChanged;
 
+        Background = new SolidColorBrush(Color.Parse("#EDE7FF"));
+
+        // ---------------------------------------------------------
+        // DECORACIÓN SUPERIOR
+        // ---------------------------------------------------------
+
+        var decoration = new Grid
+        {
+            Height = 50
+        };
+
+        var stars = new TextBlock
+        {
+            Text = "✦  ✧  ☆",
+            FontSize = 26,
+            Foreground = new SolidColorBrush(Color.Parse("#FFD966")),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(15, 0, 0, 0)
+        };
+
+        var cloud = new TextBlock
+        {
+            Text = "☁",
+            FontSize = 42,
+            Foreground = Brushes.White,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 25, 0)
+        };
+
+        decoration.Children.Add(stars);
+        decoration.Children.Add(cloud);
+
         // ---------------------------------------------------------
         // TÍTULO
         // ---------------------------------------------------------
 
         var title = new TextBlock
         {
-            Text = "Pronunciation",
+            Text = "🗣 Pronunciation",
             FontSize = 32,
             FontWeight = FontWeight.Bold,
-            HorizontalAlignment = HorizontalAlignment.Center
+            Foreground = new SolidColorBrush(Color.Parse("#6846C7")),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center
         };
 
         // ---------------------------------------------------------
@@ -53,7 +91,20 @@ public class SpeechPage : ContentPage
             Text = targetWord,
             FontSize = 48,
             FontWeight = FontWeight.Bold,
-            HorizontalAlignment = HorizontalAlignment.Center
+            Foreground = new SolidColorBrush(Color.Parse("#465477")),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center
+        };
+
+        var wordBorder = new Border
+        {
+            Background = Brushes.White,
+            BorderBrush = new SolidColorBrush(Color.Parse("#C9BBF5")),
+            BorderThickness = new Thickness(3),
+            CornerRadius = new CornerRadius(25),
+            Padding = new Thickness(35, 20),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Child = wordText
         };
 
         // ---------------------------------------------------------
@@ -64,19 +115,16 @@ public class SpeechPage : ContentPage
         {
             Content = "🔊 Hear the word",
             FontSize = 20,
+            FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White,
+            Background = new SolidColorBrush(Color.Parse("#7956D8")),
             Padding = new Thickness(25, 15),
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Center
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            CornerRadius = new CornerRadius(18)
         };
 
         playButton.Click += PlayButton_Click;
-
-        var speedLabel = new TextBlock
-        {
-            Text = "Speed: 1.0x",
-            FontSize = 16,
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
 
         var speedSlider = new Slider
         {
@@ -92,8 +140,6 @@ public class SpeechPage : ContentPage
         {
             double speed = e.NewValue;
 
-            speedLabel.Text = $"Speed: {speed:F1}x";
-
             // Piper funciona al revés:
             // lengthScale pequeño = más rápido.
             SpeechReader.Instance.SetSpeed(
@@ -101,17 +147,41 @@ public class SpeechPage : ContentPage
             );
         };
 
+        var speedLabel = new TextBlock
+        {
+            Text = "🐢  Speed  🐇",
+            FontSize = 15,
+            FontWeight = FontWeight.Bold,
+            Foreground = new SolidColorBrush(
+                Color.Parse("#55729A")),
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+
+        var speedPanel = new StackPanel
+        {
+            Spacing = 2,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+
+        speedPanel.Children.Add(speedLabel);
+        speedPanel.Children.Add(speedSlider);
+
         // ---------------------------------------------------------
-        // BOTÓN MICROFONO
+        // BOTÓN MICRÓFONO
         // ---------------------------------------------------------
 
         var speakButton = new Button
         {
             Content = "🎤 Speak",
             FontSize = 20,
+            FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White,
+            Background = new SolidColorBrush(Color.Parse("#65B8E8")),
             Padding = new Thickness(25, 15),
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Center
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            CornerRadius = new CornerRadius(18)
         };
 
         speakButton.Click += SpeakButton_Click;
@@ -122,34 +192,90 @@ public class SpeechPage : ContentPage
 
         resultText = new TextBlock
         {
-            Text = "Your answer will appear here.",
+            Text = "",
             FontSize = 20,
+            Foreground = new SolidColorBrush(Color.Parse("#55729A")),
             TextAlignment = TextAlignment.Center,
             TextWrapping = TextWrapping.Wrap,
             HorizontalAlignment = HorizontalAlignment.Center
         };
 
+        var resultBorder = new Border
+        {
+            Background = Brushes.White,
+            BorderBrush = new SolidColorBrush(Color.Parse("#C9BBF5")),
+            BorderThickness = new Thickness(2),
+            CornerRadius = new CornerRadius(20),
+            Padding = new Thickness(20, 15),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Child = resultText
+        };
+
         // ---------------------------------------------------------
-        // PANEL CENTRAL
+        // PANEL IZQUIERDO: ESCUCHAR
         // ---------------------------------------------------------
 
-        var centerPanel = new StackPanel
+        var listenPanel = new StackPanel
         {
-            Width = 450,
-            Spacing = 25,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Children =
-            {
-                title,
-                wordText,
-                playButton,
-                speedLabel,
-                speedSlider,
-                speakButton,
-                resultText
-            }
+            Spacing = 18,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Center
         };
+
+        listenPanel.Children.Add(playButton);
+        listenPanel.Children.Add(speedPanel);
+
+
+        // ---------------------------------------------------------
+        // PANEL DERECHO: HABLAR
+        // ---------------------------------------------------------
+
+        var speakPanel = new StackPanel
+        {
+            Spacing = 18,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        speakPanel.Children.Add(speakButton);
+        speakPanel.Children.Add(resultBorder);
+
+
+        // ---------------------------------------------------------
+        // EJERCICIO: DOS COLUMNAS
+        // ---------------------------------------------------------
+
+        var exerciseGrid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,*"),
+            ColumnSpacing = 30,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(20)
+        };
+
+        Grid.SetColumn(listenPanel, 0);
+        Grid.SetColumn(speakPanel, 1);
+
+        exerciseGrid.Children.Add(listenPanel);
+        exerciseGrid.Children.Add(speakPanel);
+
+
+        // ---------------------------------------------------------
+        // CONTENIDO CENTRAL
+        // ---------------------------------------------------------
+
+        var contentPanel = new StackPanel
+        {
+            Spacing = 20,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        contentPanel.Children.Add(title);
+        contentPanel.Children.Add(wordBorder);
+        contentPanel.Children.Add(exerciseGrid);
+
 
         // ---------------------------------------------------------
         // GRID PRINCIPAL
@@ -157,10 +283,15 @@ public class SpeechPage : ContentPage
 
         var mainGrid = new Grid
         {
-            Margin = new Thickness(25)
+            Margin = new Thickness(35, 20),
+            RowDefinitions = RowDefinitions.Parse("Auto,*")
         };
 
-        mainGrid.Children.Add(centerPanel);
+        Grid.SetRow(decoration, 0);
+        Grid.SetRow(contentPanel, 1);
+
+        mainGrid.Children.Add(decoration);
+        mainGrid.Children.Add(contentPanel);
 
         Content = mainGrid;
     }
@@ -227,8 +358,12 @@ public class SpeechPage : ContentPage
 
         if (IsCorrect(recognizedText))
         {
-            resultText.Text += "\n✅ Correct!";
+            resultText.Text =
+                $"You said: {recognizedText}\n" +
+                "✅ Correct!";
+
             await Task.Delay(1200);
+
             resultText.Text =
                 "📖 Back to the story...";
 
@@ -238,6 +373,8 @@ public class SpeechPage : ContentPage
             {
                 await Navigation.PopAsync();
             }
+
+            _onCompleted?.Invoke();
         }
         else
         {

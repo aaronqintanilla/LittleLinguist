@@ -25,9 +25,9 @@ public class CameraPage : ContentPage
     private bool _photoTaken;
     public CameraPage()
     {
-        // ---------------------------------------------------------
-        // TÍTULO
-        // ---------------------------------------------------------
+        NavigationPage.SetHasBackButton(this, false);
+        Background = new SolidColorBrush(Color.Parse("#EDE7FF"));
+
         _photoTaken = false;
         _photo = new Image
         {
@@ -37,14 +37,47 @@ public class CameraPage : ContentPage
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
+
+        // título
         var title = new TextBlock
         {
-            Text = "Take a picture!",
+            Text = "📸 Take a picture!",
             FontSize = 32,
             FontWeight = FontWeight.Bold,
+            Foreground = new SolidColorBrush(Color.Parse("#6846C7")),
             TextAlignment = TextAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
         };
+
+        // decoración
+        var decoration = new Grid
+        {
+            Height = 45
+        };
+
+        var stars = new TextBlock
+        {
+            Text = "✦  ✧  ☆",
+            FontSize = 26,
+            Foreground = new SolidColorBrush(Color.Parse("#FFD966")),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(15, 0, 0, 0)
+        };
+
+        var cloud = new TextBlock
+        {
+            Text = "☁",
+            FontSize = 42,
+            Foreground = Brushes.White,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 25, 0)
+        };
+
+        decoration.Children.Add(stars);
+        decoration.Children.Add(cloud);
 
         // ---------------------------------------------------------
         // INSTRUCCIONES
@@ -80,12 +113,15 @@ public class CameraPage : ContentPage
 
         continueButton = new Button
         {
-            Content = "Continue",
+            Content = "Continue ➜",
             FontSize = 18,
             FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White,
+            Background = new SolidColorBrush(Color.Parse("#6846C7")),
             Padding = new Thickness(25, 12),
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Center
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            CornerRadius = new CornerRadius(18)
 
         };
 
@@ -93,16 +129,23 @@ public class CameraPage : ContentPage
 
         retakeButton = new Button
         {
-            Content = "Retake",
+            Content = "🔄 Retake",
             FontSize = 18,
             FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White,
+            Background = new SolidColorBrush(Color.Parse("#65B8E8")),
             Padding = new Thickness(25, 12),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Center,
+            CornerRadius = new CornerRadius(18),
             IsVisible = false
         };
 
         retakeButton.Click += RetakeButton_Click;
+
+        // ---------------------------------------------------------
+        // CÁMARA
+        // ---------------------------------------------------------
 
         _cameraPreview = new Image
         {
@@ -117,9 +160,11 @@ public class CameraPage : ContentPage
         {
             Width = 500,
             Height = 320,
-            CornerRadius = new CornerRadius(15),
-            BorderThickness = new Thickness(2),
-            BorderBrush = new SolidColorBrush(Color.Parse("#D87DDE")),
+            Background = Brushes.White,
+            CornerRadius = new CornerRadius(25),
+            BorderThickness = new Thickness(4),
+            BorderBrush = new SolidColorBrush(Color.Parse("#C9BBF5")),
+            Padding = new Thickness(8),
             ClipToBounds = true,
             Child = _cameraPreview
         };
@@ -159,24 +204,25 @@ public class CameraPage : ContentPage
             RowDefinitions =
                 RowDefinitions.Parse("Auto,Auto,*,Auto,Auto"),
 
-            RowSpacing = 20
+            RowSpacing = 15
         };
 
-        Grid.SetRow(title, 0);
-        //Grid.SetRow(instructions, 1);
-        // Grid.SetRow(_tracingCanvas, 2);
-        // Grid.SetRow(_feedbackText, 3);
-        Grid.SetRow(cameraBorder, 1);
-        mainGrid.Children.Add(cameraBorder);
-        Grid.SetRow(buttonsGrid, 4);
+        // Decoración
+        Grid.SetRow(decoration, 0);
+        mainGrid.Children.Add(decoration);
 
+        // Título
+        Grid.SetRow(title, 1);
         mainGrid.Children.Add(title);
-        // mainGrid.Children.Add(instructions);
-        // mainGrid.Children.Add(_tracingCanvas);
-        // mainGrid.Children.Add(_feedbackText);
+
+        // Cámara
+        Grid.SetRow(cameraBorder, 2);
+        mainGrid.Children.Add(cameraBorder);
+
+        // Botones
+        Grid.SetRow(buttonsGrid, 3);
         mainGrid.Children.Add(buttonsGrid);
 
-        // No utilizamos ScrollViewer.
         Content = mainGrid;
     }
 
@@ -215,7 +261,7 @@ public class CameraPage : ContentPage
                 }
                 retakeButton.IsVisible = true;
             }
-            continueButton.Content = "Confirm";
+            continueButton.Content = "Confirm ✅";
 
             Console.WriteLine("Camera stopped.");
             _photoTaken = true;
