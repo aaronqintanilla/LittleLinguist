@@ -181,30 +181,13 @@ public class WritingPage : ContentPage
 
         continueButton.Click += ContinueButton_Click;
 
+        // =========================================================
+        // BOTÓN SKIP
+        // =========================================================
+
         var skipButton = new Button
         {
-            Content = "SKIP",
-            FontSize = 18,
-            FontWeight = FontWeight.Bold,
-            Foreground = Brushes.White,
-            Background = new SolidColorBrush(
-                Color.Parse("#65B8E8")),
-            Padding = new Thickness(25, 13),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Center,
-            BorderThickness = new Thickness(0),
-            CornerRadius = new CornerRadius(18)
-        };
-
-        skipButton.Click += SkipButton_Click;
-
-        // =========================================================
-        // BOTÓN FINISH
-        // =========================================================
-
-        var finishButton = new Button
-        {
-            Content = "🏠 Finish",
+            Content = "➡️ Skip",
             Padding = new Thickness(22, 13),
             FontSize = 17,
             FontWeight = FontWeight.Bold,
@@ -217,7 +200,7 @@ public class WritingPage : ContentPage
             HorizontalContentAlignment = HorizontalAlignment.Center
         };
 
-        finishButton.Click += FinishButton_Click;
+        skipButton.Click += SkipButton_Click;
 
         // =========================================================
         // GRID DE BOTONES
@@ -232,14 +215,13 @@ public class WritingPage : ContentPage
                 HorizontalAlignment.Stretch
         };
 
-        Grid.SetColumn(finishButton, 0);
+        Grid.SetColumn(skipButton, 0);
         Grid.SetColumn(clearButton, 1);
         Grid.SetColumn(continueButton, 2);
 
-        buttonsGrid.Children.Add(finishButton);
+        buttonsGrid.Children.Add(skipButton);
         buttonsGrid.Children.Add(clearButton);
         buttonsGrid.Children.Add(continueButton);
-        buttonsGrid.Children.Add(skipButton);
 
         // =========================================================
         // CABECERA
@@ -359,12 +341,5 @@ public class WritingPage : ContentPage
             _feedbackText.Text =
                 $"✏️ Try again. Write the whole word carefully. Score: {score:P0}";
         }
-    }
-
-    private void FinishButton_Click(
-        object? sender,
-        RoutedEventArgs e)
-    {
-        //FALTA
     }
 }

@@ -202,7 +202,6 @@ public class PhotoStoryPage : ContentPage
         speedPanel.Children.Add(speedLabel);
         speedPanel.Children.Add(speedSlider);
 
-        // Controles centrales: Play + Speed
         var centerControls = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -214,8 +213,6 @@ public class PhotoStoryPage : ContentPage
         centerControls.Children.Add(playButton);
         centerControls.Children.Add(speedPanel);
 
-        // Distribución:
-        // Finish | Play + Speed | Next
         Grid.SetColumn(finishButton, 0);
         Grid.SetColumn(centerControls, 1);
         Grid.SetColumn(nextButton, 2);
@@ -330,6 +327,14 @@ public class PhotoStoryPage : ContentPage
 
     public async void ContinueStory()
     {
+        if (Session.Instance.IsFinished && Navigation is not null)
+        {
+            StoryGenerator.Instance.StopStory();
+            cont = 0;
+            await Navigation.PopToRootAsync();
+            return;
+        }
+
         await Session.Instance.WriteNextPart(null);
     }
 

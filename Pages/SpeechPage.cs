@@ -186,12 +186,12 @@ public class SpeechPage : ContentPage
         speakButton.Click += SpeakButton_Click;
 
         // ---------------------------------------------------------
-        // FINISH
+        // SKIP
         // ---------------------------------------------------------
 
-        var finishButton = new Button
+        var skipButton = new Button
         {
-            Content = "🏠 Finish",
+            Content = "➡️ Skip",
 
             Padding = new Thickness(18, 10),
 
@@ -213,8 +213,8 @@ public class SpeechPage : ContentPage
                 VerticalAlignment.Center
         };
 
-        finishButton.Click +=
-            FinishButton_Click;
+        skipButton.Click +=
+            SkipButton_Click;
 
         // ---------------------------------------------------------
         // RESULTADO
@@ -314,11 +314,11 @@ public class SpeechPage : ContentPage
 
         Grid.SetRow(topPanel, 0);
         Grid.SetRow(exerciseGrid, 1);
-        Grid.SetRow(finishButton, 2);
+        Grid.SetRow(skipButton, 2);
 
         mainGrid.Children.Add(topPanel);
         mainGrid.Children.Add(exerciseGrid);
-        mainGrid.Children.Add(finishButton);
+        mainGrid.Children.Add(skipButton);
 
         // Decoración por encima del fondo, sin ocupar filas.
         mainGrid.Children.Add(stars);
@@ -464,10 +464,13 @@ public class SpeechPage : ContentPage
         });
     }
 
-    private void FinishButton_Click(
-        object? sender,
-        RoutedEventArgs e)
+    private async void SkipButton_Click(object? sender, RoutedEventArgs e)
     {
-        //FALTA
+        if (Navigation is not null)
+        {
+            await Navigation.PopAsync();
+        }
+
+        _onCompleted?.Invoke();
     }
 }

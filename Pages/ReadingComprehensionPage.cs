@@ -29,554 +29,557 @@ public class ReadingComprehensionPage : ContentPage
     private bool _answered = false;
     private bool _isFinishing = false;
 
-    public ReadingComprehensionPage(
-    string story,
-    Action? onCompleted = null)
-{
-    _onCompleted = onCompleted;
+    public ReadingComprehensionPage(string story, Action? onCompleted = null)
+    {
+        _onCompleted = onCompleted;
 
-    NavigationPage.SetHasBackButton(
-        this,
-        false
-    );
-
-    // ---------------------------------------------------------
-    // FONDO
-    // ---------------------------------------------------------
-
-    Background =
-        new SolidColorBrush(
-            Color.Parse("#EDE7FF")
+        NavigationPage.SetHasBackButton(
+            this,
+            false
         );
 
-    // ---------------------------------------------------------
-    // TÍTULO
-    // ---------------------------------------------------------
+        // ---------------------------------------------------------
+        // FONDO
+        // ---------------------------------------------------------
 
-    var title =
-        new TextBlock
-        {
-            Text = "📚 Reading Time!",
-
-            FontSize = 34,
-
-            FontWeight =
-                FontWeight.Bold,
-
-            Foreground =
-                new SolidColorBrush(
-                    Color.Parse("#6846C7")
-                ),
-
-            TextAlignment =
-                TextAlignment.Center,
-
-            HorizontalAlignment =
-                HorizontalAlignment.Center
-        };
-
-
-    // ---------------------------------------------------------
-    // PREGUNTA
-    // ---------------------------------------------------------
-
-    _questionText =
-        new TextBlock
-        {
-            Text = "✨ Preparing your question...",
-
-            FontSize = 25,
-
-            FontWeight =
-                FontWeight.Bold,
-
-            Foreground =
-                new SolidColorBrush(
-                    Color.Parse("#6846C7")
-                ),
-
-            TextAlignment =
-                TextAlignment.Center,
-
-            TextWrapping =
-                TextWrapping.Wrap,
-
-            HorizontalAlignment =
-                HorizontalAlignment.Stretch
-        };
-
-    var subtitle =
-    new TextBlock
-    {
-        Text = "Let's see how well you followed the story!",
-
-        FontSize = 17,
-
-        Foreground =
+        Background =
             new SolidColorBrush(
-                Color.Parse("#55729A")
-            ),
+                Color.Parse("#EDE7FF")
+            );
 
-        TextAlignment =
-            TextAlignment.Center,
+        // ---------------------------------------------------------
+        // TÍTULO
+        // ---------------------------------------------------------
 
-        HorizontalAlignment =
-            HorizontalAlignment.Center
-    };
+        var title =
+            new TextBlock
+            {
+                Text = "📚 Reading Time!",
 
-    // ---------------------------------------------------------
-    // OPCIONES
-    // ---------------------------------------------------------
+                FontSize = 34,
 
-    _optionsPanel =
-        new StackPanel
-        {
-            Spacing = 14,
+                FontWeight =
+                    FontWeight.Bold,
 
-            HorizontalAlignment =
-                HorizontalAlignment.Stretch
-        };
+                Foreground =
+                    new SolidColorBrush(
+                        Color.Parse("#6846C7")
+                    ),
 
-    // ---------------------------------------------------------
-    // FEEDBACK
-    // ---------------------------------------------------------
+                TextAlignment =
+                    TextAlignment.Center,
 
-    _feedbackText =
-        new TextBlock
-        {
-            Text = "",
+                HorizontalAlignment =
+                    HorizontalAlignment.Center
+            };
 
-            FontSize = 18,
 
-            FontWeight =
-                FontWeight.SemiBold,
+        // ---------------------------------------------------------
+        // PREGUNTA
+        // ---------------------------------------------------------
 
-            Foreground =
-                new SolidColorBrush(
-                    Color.Parse("#6846C7")
-                ),
+        _questionText =
+            new TextBlock
+            {
+                Text = "✨ Preparing your question...",
 
-            TextAlignment =
-                TextAlignment.Center,
+                FontSize = 25,
 
-            TextWrapping =
-                TextWrapping.Wrap,
+                FontWeight =
+                    FontWeight.Bold,
 
-            HorizontalAlignment =
-                HorizontalAlignment.Stretch
-        };
+                Foreground =
+                    new SolidColorBrush(
+                        Color.Parse("#6846C7")
+                    ),
 
-    // ---------------------------------------------------------
-    // CONTINUE
-    // ---------------------------------------------------------
+                TextAlignment =
+                    TextAlignment.Center,
 
-    _continueButton =
-        new Button
-        {
-            Content = "Continue  ➜",
+                TextWrapping =
+                    TextWrapping.Wrap,
 
-            FontSize = 17,
+                HorizontalAlignment =
+                    HorizontalAlignment.Stretch
+            };
 
-            FontWeight =
-                FontWeight.Bold,
+        var subtitle =
+            new TextBlock
+            {
+                Text = "Let's see how well you followed the story!",
 
-            Foreground =
-                Brushes.White,
+                FontSize = 17,
 
-            Background =
-                new SolidColorBrush(
-                    Color.Parse("#65B8E8")
-                ),
+                Foreground =
+                    new SolidColorBrush(
+                        Color.Parse("#55729A")
+                    ),
 
-            CornerRadius =
-                new CornerRadius(18),
+                TextAlignment =
+                    TextAlignment.Center,
 
-            Padding =
-                new Thickness(
-                    25,
-                    12
-                ),
+                HorizontalAlignment =
+                    HorizontalAlignment.Center
+            };
 
-            MinWidth = 150,
+        // ---------------------------------------------------------
+        // OPCIONES
+        // ---------------------------------------------------------
 
-            HorizontalAlignment =
-                HorizontalAlignment.Center,
+        _optionsPanel =
+            new StackPanel
+            {
+                Spacing = 14,
 
-            HorizontalContentAlignment =
-                HorizontalAlignment.Center,
+                HorizontalAlignment =
+                    HorizontalAlignment.Stretch
+            };
 
-            IsVisible = false
-        };
+        // ---------------------------------------------------------
+        // FEEDBACK
+        // ---------------------------------------------------------
 
-    _continueButton.Click +=
-        ContinueButton_Click;
+        _feedbackText =
+            new TextBlock
+            {
+                Text = "",
 
-    // ---------------------------------------------------------
-    // FINISH
-    // ---------------------------------------------------------
+                FontSize = 18,
 
-    var finishButton =
-        new Button
-        {
-            Content = "🏠 Finish",
+                FontWeight =
+                    FontWeight.SemiBold,
 
-            Padding =
-                new Thickness(
-                    22,
-                    13
-                ),
+                Foreground =
+                    new SolidColorBrush(
+                        Color.Parse("#6846C7")
+                    ),
 
-            FontSize = 17,
+                TextAlignment =
+                    TextAlignment.Center,
 
-            FontWeight =
-                FontWeight.Bold,
+                TextWrapping =
+                    TextWrapping.Wrap,
 
-            Foreground =
-                Brushes.White,
+                HorizontalAlignment =
+                    HorizontalAlignment.Stretch
+            };
 
-            Background =
-                new SolidColorBrush(
-                    Color.Parse("#E98BA5")
-                ),
+        // ---------------------------------------------------------
+        // CONTINUE
+        // ---------------------------------------------------------
 
-            BorderThickness =
-                new Thickness(0),
+        _continueButton =
+            new Button
+            {
+                Content = "Continue  ➜",
 
-            CornerRadius =
-                new CornerRadius(18),
+                FontSize = 17,
 
-            HorizontalAlignment =
-                HorizontalAlignment.Left,
+                FontWeight =
+                    FontWeight.Bold,
 
-            VerticalAlignment =
-                VerticalAlignment.Bottom,
+                Foreground =
+                    Brushes.White,
 
-            Margin =
-                new Thickness(0, 0, 0, 10)
-        };
+                Background =
+                    new SolidColorBrush(
+                        Color.Parse("#65B8E8")
+                    ),
 
-    finishButton.Click +=
-        FinishButton_Click;
+                CornerRadius =
+                    new CornerRadius(18),
 
-    // ---------------------------------------------------------
-    // TARJETA DE LA PREGUNTA
-    // ---------------------------------------------------------
+                Padding =
+                    new Thickness(
+                        25,
+                        12
+                    ),
 
-    var questionPanel =
-        new StackPanel
-        {
-            Spacing = 22
-        };
+                MinWidth = 150,
 
-    questionPanel.Children.Add(
-        _questionText
-    );
-
-    questionPanel.Children.Add(
-        _optionsPanel
-    );
-
-    questionPanel.Children.Add(
-        _feedbackText
-    );
+                HorizontalAlignment =
+                    HorizontalAlignment.Center,
 
-    questionPanel.Children.Add(
-        _continueButton
-    );
-
-    var questionCard =
-        new Border
-        {
-            Width = 540,
+                HorizontalContentAlignment =
+                    HorizontalAlignment.Center,
 
-            Background =
-                Brushes.White,
+                IsVisible = false
+            };
 
-            BorderBrush =
-                new SolidColorBrush(
-                    Color.Parse("#D8CCFF")
-                ),
-
-            BorderThickness =
-                new Thickness(2),
-
-            CornerRadius =
-                new CornerRadius(28),
-
-            Padding =
-                new Thickness(
-                    35,
-                    30
-                ),
-
-            Child =
-                questionPanel
-        };
-
-    // ---------------------------------------------------------
-    // PANEL CENTRAL
-    // ---------------------------------------------------------
-
-    var centerPanel =
-        new StackPanel
-        {
-            Spacing = 20,
-
-            HorizontalAlignment =
-                HorizontalAlignment.Center,
-
-            VerticalAlignment =
-                VerticalAlignment.Center
-        };
-
-    centerPanel.Children.Add(
-        title
-    );
-
-    centerPanel.Children.Add(
-        subtitle
-    );
-
-    centerPanel.Children.Add(
-        questionCard
-    );
-
-    // ---------------------------------------------------------
-    // DECORACIÓN
-    // ---------------------------------------------------------
-
-    var star1 =
-        new TextBlock
-        {
-            Text = "☆",
-
-            FontSize = 28,
-
-            Foreground =
-                new SolidColorBrush(
-                    Color.Parse("#7956D8")
-                ),
-
-            HorizontalAlignment =
-                HorizontalAlignment.Left,
-
-            VerticalAlignment =
-                VerticalAlignment.Top,
-
-            Margin =
-                new Thickness(
-                    75,
-                    100,
-                    0,
-                    0
-                )
-        };
-
-    var star2 =
-        new TextBlock
-        {
-            Text = "✦",
-
-            FontSize = 23,
-
-            Foreground =
-                new SolidColorBrush(
-                    Color.Parse("#65B8E8")
-                ),
-
-            HorizontalAlignment =
-                HorizontalAlignment.Right,
-
-            VerticalAlignment =
-                VerticalAlignment.Top,
-
-            Margin =
-                new Thickness(
-                    0,
-                    150,
-                    80,
-                    0
-                )
-        };
-
-    var star3 =
-        new TextBlock
-        {
-            Text = "✧",
-
-            FontSize = 22,
-
-            Foreground =
-                new SolidColorBrush(
-                    Color.Parse("#7956D8")
-                ),
-
-            HorizontalAlignment =
-                HorizontalAlignment.Left,
-
-            VerticalAlignment =
-                VerticalAlignment.Bottom,
-
-            Margin =
-                new Thickness(
-                    100,
-                    0,
-                    0,
-                    90
-                )
-        };
-
-    var cloud1 =
-        new TextBlock
-        {
-            Text = "☁",
-
-            FontSize = 48,
-
-            Foreground =
-                Brushes.White,
-
-            HorizontalAlignment =
-                HorizontalAlignment.Left,
-
-            VerticalAlignment =
-                VerticalAlignment.Bottom,
-
-            Margin =
-                new Thickness(
-                    35,
-                    0,
-                    0,
-                    35
-                )
-        };
-
-    var cloud2 =
-        new TextBlock
-        {
-            Text = "☁",
-
-            FontSize = 38,
-
-            Foreground =
-                Brushes.White,
-
-            HorizontalAlignment =
-                HorizontalAlignment.Right,
-
-            VerticalAlignment =
-                VerticalAlignment.Bottom,
-
-            Margin =
-                new Thickness(
-                    0,
-                    0,
-                    50,
-                    65
-                )
-        };
-
-    // ---------------------------------------------------------
-    // GRID PRINCIPAL
-    // ---------------------------------------------------------
-
-    var mainGrid =
-        new Grid
-        {
-            Margin =
-                new Thickness(30)
-        };
-
-    mainGrid.Children.Add(
-        star1
-    );
-
-    mainGrid.Children.Add(
-        star2
-    );
-
-    mainGrid.Children.Add(
-        star3
-    );
-
-    mainGrid.Children.Add(
-        cloud1
-    );
-
-    mainGrid.Children.Add(
-        cloud2
-    );
-
-    mainGrid.Children.Add(
-        finishButton
-    );
-
-    mainGrid.Children.Add(
-        centerPanel
-    );
-
-    Content =
-        mainGrid;
-
-    // ---------------------------------------------------------
-    // PREGUNTA RECIBIDA
-    // ---------------------------------------------------------
-
-    _ = LoadQuestions(story);
-}
-
-
-private async Task LoadQuestions(
-    string story)
-{
-    try
+        _continueButton.Click +=
+            ContinueButton_Click;
+
+        // ---------------------------------------------------------
+        // SKIP / FINISH
+        // ---------------------------------------------------------
+
+        var skipButton =
+            new Button
+            {
+                Content = "➡️ Skip",
+
+                Padding =
+                    new Thickness(
+                        22,
+                        13
+                    ),
+
+                FontSize = 17,
+
+                FontWeight =
+                    FontWeight.Bold,
+
+                Foreground =
+                    Brushes.White,
+
+                Background =
+                    new SolidColorBrush(
+                        Color.Parse("#E98BA5")
+                    ),
+
+                BorderThickness =
+                    new Thickness(0),
+
+                CornerRadius =
+                    new CornerRadius(18),
+
+                HorizontalAlignment =
+                    HorizontalAlignment.Left,
+
+                VerticalAlignment =
+                    VerticalAlignment.Center
+            };
+
+        skipButton.Click +=
+            SkipButton_Click;
+
+        // ---------------------------------------------------------
+        // TARJETA DE LA PREGUNTA
+        // ---------------------------------------------------------
+
+        var questionPanel =
+            new StackPanel
+            {
+                Spacing = 22
+            };
+
+        questionPanel.Children.Add(
+            _questionText
+        );
+
+        questionPanel.Children.Add(
+            _optionsPanel
+        );
+
+        questionPanel.Children.Add(
+            _feedbackText
+        );
+
+        questionPanel.Children.Add(
+            _continueButton
+        );
+
+        var questionCard =
+            new Border
+            {
+                Width = 540,
+
+                Background =
+                    Brushes.White,
+
+                BorderBrush =
+                    new SolidColorBrush(
+                        Color.Parse("#D8CCFF")
+                    ),
+
+                BorderThickness =
+                    new Thickness(2),
+
+                CornerRadius =
+                    new CornerRadius(28),
+
+                Padding =
+                    new Thickness(
+                        35,
+                        30
+                    ),
+
+                Child =
+                    questionPanel
+            };
+
+        // ---------------------------------------------------------
+        // PANEL CENTRAL
+        // ---------------------------------------------------------
+
+        var centerPanel =
+            new StackPanel
+            {
+                Spacing = 20,
+
+                HorizontalAlignment =
+                    HorizontalAlignment.Center,
+
+                VerticalAlignment =
+                    VerticalAlignment.Center
+            };
+
+        centerPanel.Children.Add(
+            title
+        );
+
+        centerPanel.Children.Add(
+            subtitle
+        );
+
+        centerPanel.Children.Add(
+            questionCard
+        );
+
+        // ---------------------------------------------------------
+        // DECORACIÓN
+        // ---------------------------------------------------------
+
+        var star1 =
+            new TextBlock
+            {
+                Text = "☆",
+
+                FontSize = 28,
+
+                Foreground =
+                    new SolidColorBrush(
+                        Color.Parse("#7956D8")
+                    ),
+
+                HorizontalAlignment =
+                    HorizontalAlignment.Left,
+
+                VerticalAlignment =
+                    VerticalAlignment.Top,
+
+                Margin =
+                    new Thickness(
+                        75,
+                        100,
+                        0,
+                        0
+                    )
+            };
+
+        var star2 =
+            new TextBlock
+            {
+                Text = "✦",
+
+                FontSize = 23,
+
+                Foreground =
+                    new SolidColorBrush(
+                        Color.Parse("#65B8E8")
+                    ),
+
+                HorizontalAlignment =
+                    HorizontalAlignment.Right,
+
+                VerticalAlignment =
+                    VerticalAlignment.Top,
+
+                Margin =
+                    new Thickness(
+                        0,
+                        150,
+                        80,
+                        0
+                    )
+            };
+
+        var star3 =
+            new TextBlock
+            {
+                Text = "✧",
+
+                FontSize = 22,
+
+                Foreground =
+                    new SolidColorBrush(
+                        Color.Parse("#7956D8")
+                    ),
+
+                HorizontalAlignment =
+                    HorizontalAlignment.Left,
+
+                VerticalAlignment =
+                    VerticalAlignment.Bottom,
+
+                Margin =
+                    new Thickness(
+                        100,
+                        0,
+                        0,
+                        90
+                    )
+            };
+
+        var cloud1 =
+            new TextBlock
+            {
+                Text = "☁",
+
+                FontSize = 48,
+
+                Foreground =
+                    Brushes.White,
+
+                HorizontalAlignment =
+                    HorizontalAlignment.Left,
+
+                VerticalAlignment =
+                    VerticalAlignment.Bottom,
+
+                Margin =
+                    new Thickness(
+                        35,
+                        0,
+                        0,
+                        35
+                    )
+            };
+
+        var cloud2 =
+            new TextBlock
+            {
+                Text = "☁",
+
+                FontSize = 38,
+
+                Foreground =
+                    Brushes.White,
+
+                HorizontalAlignment =
+                    HorizontalAlignment.Right,
+
+                VerticalAlignment =
+                    VerticalAlignment.Bottom,
+
+                Margin =
+                    new Thickness(
+                        0,
+                        0,
+                        50,
+                        65
+                    )
+            };
+
+        // ---------------------------------------------------------
+        // GRID PRINCIPAL
+        // ---------------------------------------------------------
+
+        var mainGrid =
+            new Grid
+            {
+                Margin =
+                    new Thickness(30),
+
+                RowDefinitions =
+                    RowDefinitions.Parse("*,Auto")
+            };
+
+        // El contenido central ocupa la primera fila
+        Grid.SetRow(centerPanel, 0);
+
+        // Finish ocupa una fila independiente debajo
+        Grid.SetRow(skipButton, 1);
+
+        mainGrid.Children.Add(
+            star1
+        );
+
+        mainGrid.Children.Add(
+            star2
+        );
+
+        mainGrid.Children.Add(
+            star3
+        );
+
+        mainGrid.Children.Add(
+            cloud1
+        );
+
+        mainGrid.Children.Add(
+            cloud2
+        );
+
+        mainGrid.Children.Add(
+            centerPanel
+        );
+
+        mainGrid.Children.Add(
+            skipButton
+        );
+
+        Content =
+            mainGrid;
+
+        // ---------------------------------------------------------
+        // PREGUNTA RECIBIDA
+        // ---------------------------------------------------------
+
+        _ = LoadQuestions(story);
+    }
+
+    private async Task LoadQuestions(
+        string story)
     {
-        _questions =
-            await StoryGenerator.Instance
-                .GenerateReadingQuestions(story);
-
-        if (_questions.Count == 0)
+        try
         {
+            _questions =
+                await StoryGenerator.Instance
+                    .GenerateReadingQuestions(story);
+
+            if (_questions.Count == 0)
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    _questionText.Text =
+                        "😕 I couldn't prepare the question.";
+
+                    _feedbackText.Text =
+                        "Let's continue the adventure!";
+
+                    _continueButton.IsVisible =
+                        true;
+                });
+
+                return;
+            }
+
+            _currentQuestion = 0;
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                ShowQuestion();
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(
+                "READING COMPREHENSION ERROR:"
+            );
+
+            Console.Error.WriteLine(ex);
+
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 _questionText.Text =
                     "😕 I couldn't prepare the question.";
 
-                _feedbackText.Text =
-                    "Let's continue the adventure!";
-
                 _continueButton.IsVisible =
                     true;
             });
-
-            return;
         }
-
-        _currentQuestion = 0;
-
-        await Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            ShowQuestion();
-        });
     }
-    catch (Exception ex)
-    {
-        Console.Error.WriteLine(
-            "READING COMPREHENSION ERROR:"
-        );
-
-        Console.Error.WriteLine(ex);
-
-        await Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            _questionText.Text =
-                "😕 I couldn't prepare the question.";
-
-            _continueButton.IsVisible =
-                true;
-        });
-    }
-}
     // ---------------------------------------------------------
     // MOSTRAR PREGUNTA
     // ---------------------------------------------------------
@@ -751,10 +754,13 @@ private async Task LoadQuestions(
         _onCompleted?.Invoke();
     }
 
-    private void FinishButton_Click(
-        object? sender,
-        RoutedEventArgs e)
+    private async void SkipButton_Click(object? sender, RoutedEventArgs e)
     {
-        //FALTA
+        if (Navigation is not null)
+        {
+            await Navigation.PopAsync();
+        }
+
+        _onCompleted?.Invoke();
     }
 }
