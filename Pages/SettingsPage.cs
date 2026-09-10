@@ -3,6 +3,8 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using LittleLinguist.Services;
+using System.Threading.Tasks;
 
 namespace LittleLinguist.Pages;
 
@@ -22,9 +24,12 @@ public class SettingsPage : ContentPage
     private readonly CheckBox _listeningCheckBox;
 
     private readonly TextBlock _statusText;
+    private readonly LearningSettings _settings;
 
     public SettingsPage()
     {
+        _settings = LearningSettings.Load();
+
         // ---------------------------------------------------------
         // FONDO
         // ---------------------------------------------------------
@@ -105,74 +110,6 @@ public class SettingsPage : ContentPage
         decoration.Children.Add(cloud);
 
         // ---------------------------------------------------------
-        // MODO DE APRENDIZAJE
-        // ---------------------------------------------------------
-
-        var defaultStory = new RadioButton
-        {
-            Content = "Default story",
-            GroupName = "LearningMode",
-            IsChecked = true,
-            FontSize = 18,
-            Foreground = new SolidColorBrush(Color.Parse("#5940A8"))
-        };
-
-        var createStory = new RadioButton
-        {
-            Content = "Create your own story",
-            GroupName = "LearningMode",
-            FontSize = 18,
-            Foreground = new SolidColorBrush(Color.Parse("#5940A8"))
-        };
-
-        var defaultStoryPanel = new StackPanel
-        {
-            Spacing = 5,
-            Children =
-            {
-                defaultStory,
-                new TextBlock
-                {
-                    Text = "Start a ready-made adventure created just for you.",
-                    TextWrapping = TextWrapping.Wrap,
-                    Foreground = new SolidColorBrush(Color.Parse("#55729A"))
-                }
-            }
-        };
-
-        var createStoryPanel = new StackPanel
-        {
-            Spacing = 5,
-            Children =
-            {
-                createStory,
-                new TextBlock
-                {
-                    Text = "Show an object and make it part of your adventure.",
-                    TextWrapping = TextWrapping.Wrap,
-                    Foreground = new SolidColorBrush(Color.Parse("#55729A"))
-                }
-            }
-        };
-
-        var modeGrid = new Grid
-        {
-            ColumnDefinitions = ColumnDefinitions.Parse("*,*"),
-            ColumnSpacing = 40
-        };
-
-        Grid.SetColumn(defaultStoryPanel, 0);
-        Grid.SetColumn(createStoryPanel, 1);
-
-        modeGrid.Children.Add(defaultStoryPanel);
-        modeGrid.Children.Add(createStoryPanel);
-
-        var modeSection = CreateSection(
-            "📚 Select your learning mode:",
-            modeGrid
-        );
-
-        // ---------------------------------------------------------
         // HABILIDADES
         // ---------------------------------------------------------
 
@@ -180,7 +117,7 @@ public class SettingsPage : ContentPage
         {
             Content = "🗣Pronunciation",
             FontSize = 18,
-            IsChecked = true,
+            IsChecked = _settings.Pronunciation,
             Foreground = new SolidColorBrush(Color.Parse("#5940A8"))
         };
 
@@ -188,7 +125,7 @@ public class SettingsPage : ContentPage
         {
             Content = "✏️Writing",
             FontSize = 18,
-            IsChecked = true,
+            IsChecked = _settings.Writing,
             Foreground = new SolidColorBrush(Color.Parse("#5940A8"))
         };
 
@@ -196,7 +133,7 @@ public class SettingsPage : ContentPage
         {
             Content = "📖Reading comprehension",
             FontSize = 18,
-            IsChecked = true,
+            IsChecked = _settings.Reading,
             Foreground = new SolidColorBrush(Color.Parse("#5940A8"))
         };
 
@@ -204,7 +141,7 @@ public class SettingsPage : ContentPage
         {
             Content = "👂Listening comprehension",
             FontSize = 18,
-            IsChecked = true,
+            IsChecked = _settings.Listening,
             Foreground = new SolidColorBrush(Color.Parse("#5940A8"))
         };
 
@@ -299,7 +236,6 @@ public class SettingsPage : ContentPage
                 backButton,
                 titleBorder,
                 decoration,
-                modeSection,
                 skillsSection,
                 bottomGrid
             }
@@ -387,9 +323,9 @@ public class SettingsPage : ContentPage
     }
 
     // Comprueba que se haya seleccionado alguna habilidad.
-    private void StartButton_Click(
-        object? sender,
-        RoutedEventArgs e)
+    private async void StartButton_Click(
+    object? sender,
+    RoutedEventArgs e)
     {
         bool hasSelectedSkill =
             _pronunciationCheckBox.IsChecked == true ||
@@ -397,15 +333,37 @@ public class SettingsPage : ContentPage
             _readingCheckBox.IsChecked == true ||
             _listeningCheckBox.IsChecked == true;
 
-        if (hasSelectedSkill)
+        if (!hasSelectedSkill)
         {
             _statusText.Text =
-                "🌟 Your learning adventure is ready!";
+                "⚠️ You must select at least one skill to continue!";
+
+            return;
         }
-        else
+
+        // Guardamos el estado actual de las casillas
+        _settings.Pronunciation =
+            _pronunciationCheckBox.IsChecked == true;
+
+        _settings.Writing =
+            _writingCheckBox.IsChecked == true;
+
+        _settings.Reading =
+            _readingCheckBox.IsChecked == true;
+
+        _settings.Listening =
+            _listeningCheckBox.IsChecked == true;
+
+        _settings.Save();
+
+        _statusText.Text =
+            "🌟 Your learning configuration has been saved!";
+
+        await Task.Delay(800);
+
+        if (Navigation is not null)
         {
-            _statusText.Text =
-                "You must select at least one skill to improve!";
+            await Navigation.PopAsync();
         }
     }
 }
