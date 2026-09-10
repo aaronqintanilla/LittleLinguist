@@ -12,12 +12,6 @@ using Avalonia.Media;
 
 namespace LittleLinguist.Pages;
 
-/*
-FALTA:
-1. que cambie la pagina hacia la que se mueve según las competencias
-2. cambiar el diseño de la interfaz
-*/
-
 public class HomePage : ContentPage
 {
     private SettingsPage? settingsPage;

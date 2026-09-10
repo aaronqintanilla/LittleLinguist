@@ -16,13 +16,11 @@ using System.Text.RegularExpressions;
 namespace LittleLinguist.Pages;
 using Avalonia.Controls.Documents;
 using Avalonia.Threading;
-
+using LittleLinguist.Services;
 
 /*
 FALTA:
-1. cambiar pruebas a las que ir según la competencia
-2. comparar con StoryPage
-3. historias diferentes
+1. historias diferentes
 */
 
 public class PhotoStoryPage : ContentPage
@@ -286,37 +284,69 @@ public class PhotoStoryPage : ContentPage
 
         Console.WriteLine($"Selected word: {randomWord}");
 
-        ContentPage page;
+        ContentPage? page = null;
 
-        switch (cont % 3)
+        var settings = LearningSettings.Load();
+
+        bool skillFound = false;
+
+        for (int i = 0; i < 3 && !skillFound; i++)
         {
-            case 0:
-                page = new WritingPage(
-                    randomWord,
-                    ContinueStory
-                );
-                break;
+            switch (cont % 3)
+            {
+                // Writing
+                case 0:
+                    cont++;
 
-            case 1:
-                page =
-                    new ReadingComprehensionPage(
+                    if (settings.Writing)
+                    {
+                        page = new WritingPage(
+                        randomWord,
+                        ContinueStory
+                        );
+
+                        skillFound = true;
+                    }
+                    break;
+
+                // Reading and Listening
+                case 1:
+                    cont++;
+
+                    if (settings.Reading || settings.Listening)
+                    {
+                        page = new ReadingComprehensionPage(
                         story,
                         ContinueStory
-                    );
-                break;
+                        );
 
-            default:
-                page = new SpeechPage(
-                    randomWord,
-                    ContinueStory
-                );
-                break;
+                        skillFound = true;
+                    }
+                    break;
+
+                // Pronunciation
+                case 2:
+                    cont++;
+
+                    if (settings.Pronunciation)
+                    {
+                        page = new SpeechPage(
+                        randomWord,
+                        ContinueStory
+                    );
+
+                        skillFound = true;
+                    }
+                    break;
+            }
         }
 
-        cont++;
-        await Navigation.PushAsync(page);
+        if (page is not null)
+        {
+            await Navigation.PushAsync(page);
+        }
 
-        //await Navigation.PushAsync(new WritingPage(randomWord, StartStory));
+        //BUG: await Navigation.PushAsync(new WritingPage(randomWord, StartStory));
     }
 
     public async void StartStory(byte[] imageData)
