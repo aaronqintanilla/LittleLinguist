@@ -9,6 +9,7 @@ using System;
 
 namespace LittleLinguist.Pages;
 
+// Handles the writing activity and checks the traced word.
 public class WritingPage : ContentPage
 {
     private readonly TracingCanvas _tracingCanvas;
@@ -16,21 +17,14 @@ public class WritingPage : ContentPage
     private readonly Action? _onCompleted;
     private bool _isCompleting = false;
 
+    // Initializes the writing page and its user interface.
     public WritingPage(string word = "APPLE", Action? onCompleted = null)
     {
         _onCompleted = onCompleted;
         NavigationPage.SetHasBackButton(this, false);
 
-        // =========================================================
-        // FONDO
-        // =========================================================
-
         Background = new SolidColorBrush(
             Color.Parse("#EDE7FF"));
-
-        // =========================================================
-        // TÍTULO
-        // =========================================================
 
         var title = new TextBlock
         {
@@ -43,10 +37,6 @@ public class WritingPage : ContentPage
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
-
-        // =========================================================
-        // DECORACIÓN
-        // =========================================================
 
         var decoration = new Grid
         {
@@ -76,10 +66,6 @@ public class WritingPage : ContentPage
         decoration.Children.Add(starsLeft);
         decoration.Children.Add(starsRight);
 
-        // =========================================================
-        // INSTRUCCIONES
-        // =========================================================
-
         var instructions = new TextBlock
         {
             Text = "Trace the word with your finger or digital pen ✨",
@@ -91,10 +77,6 @@ public class WritingPage : ContentPage
             HorizontalAlignment = HorizontalAlignment.Center
         };
 
-        // =========================================================
-        // ZONA TÁCTIL
-        // =========================================================
-
         _tracingCanvas = new TracingCanvas
         {
             TargetWord = word.ToUpperInvariant(),
@@ -104,10 +86,6 @@ public class WritingPage : ContentPage
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch
         };
-
-        // =========================================================
-        // TARJETA DEL ÁREA DE ESCRITURA
-        // =========================================================
 
         var canvasBorder = new Border
         {
@@ -122,10 +100,6 @@ public class WritingPage : ContentPage
             Child = _tracingCanvas
         };
 
-        // =========================================================
-        // MENSAJE
-        // =========================================================
-
         _feedbackText = new TextBlock
         {
             Text = "",
@@ -138,10 +112,6 @@ public class WritingPage : ContentPage
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Center
         };
-
-        // =========================================================
-        // BOTÓN CLEAR
-        // =========================================================
 
         var clearButton = new Button
         {
@@ -160,10 +130,6 @@ public class WritingPage : ContentPage
 
         clearButton.Click += ClearButton_Click;
 
-        // =========================================================
-        // BOTÓN CONTINUE
-        // =========================================================
-
         var continueButton = new Button
         {
             Content = "⭐ Continue",
@@ -180,10 +146,6 @@ public class WritingPage : ContentPage
         };
 
         continueButton.Click += ContinueButton_Click;
-
-        // =========================================================
-        // BOTÓN SKIP
-        // =========================================================
 
         var skipButton = new Button
         {
@@ -202,10 +164,6 @@ public class WritingPage : ContentPage
 
         skipButton.Click += SkipButton_Click;
 
-        // =========================================================
-        // GRID DE BOTONES
-        // =========================================================
-
         var buttonsGrid = new Grid
         {
             ColumnDefinitions =
@@ -223,10 +181,6 @@ public class WritingPage : ContentPage
         buttonsGrid.Children.Add(clearButton);
         buttonsGrid.Children.Add(continueButton);
 
-        // =========================================================
-        // CABECERA
-        // =========================================================
-
         var header = new Grid
         {
             Height = 80
@@ -237,10 +191,6 @@ public class WritingPage : ContentPage
 
         header.Children.Add(decoration);
         header.Children.Add(title);
-
-        // =========================================================
-        // GRID PRINCIPAL
-        // =========================================================
 
         var mainGrid = new Grid
         {
@@ -268,10 +218,7 @@ public class WritingPage : ContentPage
         Content = mainGrid;
     }
 
-    // ---------------------------------------------------------
-    // CLEAR
-    // ---------------------------------------------------------
-
+    // Clears the user's drawing and feedback message.
     private void ClearButton_Click(
         object? sender,
         RoutedEventArgs e)
@@ -280,6 +227,7 @@ public class WritingPage : ContentPage
         _feedbackText.Text = "";
     }
 
+    // Skips the writing activity and continues the story.
     private async void SkipButton_Click(object? sender, RoutedEventArgs e)
     {
         if (Navigation is not null)
@@ -290,16 +238,11 @@ public class WritingPage : ContentPage
         _onCompleted?.Invoke();
     }
 
-    // ---------------------------------------------------------
-    // CONTINUE
-    // ---------------------------------------------------------
-
+    // Checks the tracing score and continues if the word is correct.
     private async void ContinueButton_Click(
     object? sender,
     RoutedEventArgs e)
     {
-        // Si ya estamos volviendo a StoryPage,
-        // ignoramos cualquier clic adicional.
         if (_isCompleting)
             return;
 
@@ -308,7 +251,6 @@ public class WritingPage : ContentPage
 
         if (score >= 0.80)
         {
-            // Desde este momento no permitimos más clics.
             _isCompleting = true;
 
             if (sender is Button button)
@@ -331,7 +273,6 @@ public class WritingPage : ContentPage
                 await Navigation.PopAsync();
             }
 
-            // Solo se ejecutará UNA vez.
             _onCompleted?.Invoke();
         }
         else

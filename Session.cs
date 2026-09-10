@@ -1,15 +1,11 @@
 using System;
 using System.Threading.Tasks;
 
-// Keeps track of how far along the story is, so no page needs
-// to know which part comes next.
+// Keeps track of the current story session and its progress.
 public class Session
 {
     public static Session Instance { get; } = new Session();
-
-    // Parts of the story already generated (counter)
     private int _partsWritten;
-
     private Session() { }
 
     // Starts a new session from the beginning.
@@ -18,7 +14,7 @@ public class Session
         _partsWritten = 0;
     }
 
-    // Generates whichever part comes next.
+    // Generates the next part of the story.
     public async Task WriteNextPart(string? objectDescription)
     {
         Console.WriteLine($"Parte {_partsWritten}");

@@ -11,6 +11,7 @@ using Avalonia.Threading;
 
 namespace LittleLinguist.Pages;
 
+// Handles the pronunciation activity and speech recognition.
 public class SpeechPage : ContentPage
 {
     private readonly string targetWord;
@@ -19,15 +20,11 @@ public class SpeechPage : ContentPage
     private TextBlock resultText;
     private readonly Action? _onCompleted;
 
+    // Initializes the pronunciation page and its user interface.
     public SpeechPage(string word, Action? onCompleted = null)
     {
         targetWord = word;
         _onCompleted = onCompleted;
-
-        //string modelPath = Path.Combine(
-        //AppContext.BaseDirectory,
-        //"models",
-        //"vosk-model-small-en-us-0.15");
 
         string modelPath = $"{System.IO.Directory.GetCurrentDirectory()}/models/vosk-model-small-en-us-0.15";
 
@@ -35,10 +32,6 @@ public class SpeechPage : ContentPage
         SpeechReader.Instance.SentenceChanged += OnSentenceChanged;
 
         Background = new SolidColorBrush(Color.Parse("#EDE7FF"));
-
-        // ---------------------------------------------------------
-        // DECORACIÓN
-        // ---------------------------------------------------------
 
         var stars = new TextBlock
         {
@@ -67,10 +60,6 @@ public class SpeechPage : ContentPage
                 0, 0, 15, 5)
         };
 
-        // ---------------------------------------------------------
-        // TÍTULO
-        // ---------------------------------------------------------
-
         var title = new TextBlock
         {
             Text = "🗣 Pronunciation",
@@ -80,10 +69,6 @@ public class SpeechPage : ContentPage
             HorizontalAlignment = HorizontalAlignment.Center,
             TextAlignment = TextAlignment.Center
         };
-
-        // ---------------------------------------------------------
-        // PALABRA
-        // ---------------------------------------------------------
 
         var wordText = new TextBlock
         {
@@ -105,10 +90,6 @@ public class SpeechPage : ContentPage
             HorizontalAlignment = HorizontalAlignment.Center,
             Child = wordText
         };
-
-        // ---------------------------------------------------------
-        // BOTÓN REPRODUCIR
-        // ---------------------------------------------------------
 
         var playButton = new Button
         {
@@ -139,8 +120,7 @@ public class SpeechPage : ContentPage
         {
             double speed = e.NewValue;
 
-            // Piper funciona al revés:
-            // lengthScale pequeño = más rápido.
+            // Piper works in reverse: a smaller lengthScale means faster speech.
             SpeechReader.Instance.SetSpeed(
                 (float)(1.0 / speed)
             );
@@ -166,10 +146,6 @@ public class SpeechPage : ContentPage
         speedPanel.Children.Add(speedLabel);
         speedPanel.Children.Add(speedSlider);
 
-        // ---------------------------------------------------------
-        // BOTÓN MICRÓFONO
-        // ---------------------------------------------------------
-
         var speakButton = new Button
         {
             Content = "🎤 Speak",
@@ -184,10 +160,6 @@ public class SpeechPage : ContentPage
         };
 
         speakButton.Click += SpeakButton_Click;
-
-        // ---------------------------------------------------------
-        // SKIP
-        // ---------------------------------------------------------
 
         var skipButton = new Button
         {
@@ -216,10 +188,6 @@ public class SpeechPage : ContentPage
         skipButton.Click +=
             SkipButton_Click;
 
-        // ---------------------------------------------------------
-        // RESULTADO
-        // ---------------------------------------------------------
-
         resultText = new TextBlock
         {
             Text = "",
@@ -241,10 +209,6 @@ public class SpeechPage : ContentPage
             Child = resultText
         };
 
-        // ---------------------------------------------------------
-        // PANEL IZQUIERDO: ESCUCHAR
-        // ---------------------------------------------------------
-
         var listenPanel = new StackPanel
         {
             Spacing = 10,
@@ -255,10 +219,6 @@ public class SpeechPage : ContentPage
         listenPanel.Children.Add(playButton);
         listenPanel.Children.Add(speedPanel);
 
-        // ---------------------------------------------------------
-        // PANEL DERECHO: HABLAR
-        // ---------------------------------------------------------
-
         var speakPanel = new StackPanel
         {
             Spacing = 10,
@@ -268,10 +228,6 @@ public class SpeechPage : ContentPage
 
         speakPanel.Children.Add(speakButton);
         speakPanel.Children.Add(resultBorder);
-
-        // ---------------------------------------------------------
-        // EJERCICIO: DOS COLUMNAS
-        // ---------------------------------------------------------
 
         var exerciseGrid = new Grid
         {
@@ -288,10 +244,6 @@ public class SpeechPage : ContentPage
         exerciseGrid.Children.Add(listenPanel);
         exerciseGrid.Children.Add(speakPanel);
 
-        // ---------------------------------------------------------
-        // CONTENIDO SUPERIOR
-        // ---------------------------------------------------------
-
         var topPanel = new StackPanel
         {
             Spacing = 10,
@@ -301,10 +253,6 @@ public class SpeechPage : ContentPage
 
         topPanel.Children.Add(title);
         topPanel.Children.Add(wordBorder);
-
-        // ---------------------------------------------------------
-        // GRID PRINCIPAL
-        // ---------------------------------------------------------
 
         var mainGrid = new Grid
         {
@@ -320,114 +268,89 @@ public class SpeechPage : ContentPage
         mainGrid.Children.Add(exerciseGrid);
         mainGrid.Children.Add(skipButton);
 
-        // Decoración por encima del fondo, sin ocupar filas.
         mainGrid.Children.Add(stars);
         mainGrid.Children.Add(cloud);
 
         Content = mainGrid;
     }
 
-    // ---------------------------------------------------------
-    // REPRODUCIR PALABRA
-    // ---------------------------------------------------------
+    // Plays the target word using speech synthesis.
     private void PlayButton_Click(
     object? sender,
     RoutedEventArgs e)
     {
-        // Eliminamos cualquier reproducción anterior.
         SpeechReader.Instance.Stop();
 
         SpeechReader.Instance.Speak(targetWord);
         SpeechReader.Instance.Play();
     }
 
-    // ---------------------------------------------------------
-    // SPEECH TO TEXT
-    // ---------------------------------------------------------
-
-    // private async void SpeakButton_Click(
-    // object? sender,
-    // RoutedEventArgs e)
-    // {
-    //     resultText.Text = "🎤 Listening...";
-
-    //     string recognizedText = await ListenAndRecognize();
-
-    //     resultText.Text = "You said: " + recognizedText;
-
-    //     if (IsCorrect(recognizedText))
-    //     {
-    //         resultText.Text += "\n✅ Correct!";
-    //     }
-    //     else
-    //     {
-    //         resultText.Text += "\n❌ Try again!";
-    //     }
-    // }
+    // Records the user's speech and checks the pronunciation.
     private async void SpeakButton_Click(
     object? sender,
-    RoutedEventArgs e)
-{
-    try
+        RoutedEventArgs e)
     {
-        Console.WriteLine("Starting speech recognition...");
-
-        resultText.Text = "🎤 Listening...";
-
-        string recognizedText =
-            await ListenAndRecognize();
-
-        Console.WriteLine(
-            $"Recognized: {recognizedText}"
-        );
-
-        if (string.IsNullOrWhiteSpace(recognizedText))
+        try
         {
-            resultText.Text = $"🎤 No speech detected.\n Try again!";
-            return;
-        }
+            Console.WriteLine("Starting speech recognition...");
 
-        if (IsCorrect(recognizedText))
-        {
-            resultText.Text =
-                $"You said: {recognizedText}\n" +
-                "✅ Correct!";
+            resultText.Text = "🎤 Listening...";
 
-            await Task.Delay(1200);
+            string recognizedText =
+                await ListenAndRecognize();
 
-            resultText.Text =
-                "📖 Back to the story...";
+            Console.WriteLine(
+                $"Recognized: {recognizedText}"
+            );
 
-            await Task.Delay(800);
-
-            if (Navigation is not null)
+            if (string.IsNullOrWhiteSpace(recognizedText))
             {
-                await Navigation.PopAsync();
+                resultText.Text = $"🎤 No speech detected.\n Try again!";
+                return;
             }
 
-            _onCompleted?.Invoke();
+            if (IsCorrect(recognizedText))
+            {
+                resultText.Text =
+                    $"You said: {recognizedText}\n" +
+                    "✅ Correct!";
+
+                await Task.Delay(1200);
+
+                resultText.Text =
+                    "📖 Back to the story...";
+
+                await Task.Delay(800);
+
+                if (Navigation is not null)
+                {
+                    await Navigation.PopAsync();
+                }
+
+                _onCompleted?.Invoke();
+            }
+            else
+            {
+                resultText.Text =
+                    $"❌ Incorrect.\n Try again!";
+            }
         }
-        else
+        catch (Exception ex)
         {
+            Console.Error.WriteLine(
+                "SPEECH RECOGNITION ERROR:"
+            );
+
+            Console.Error.WriteLine(
+                ex.ToString()
+            );
+
             resultText.Text =
-                $"❌ Incorrect.\n Try again!";
+                "❌ Speech recognition error.";
         }
     }
-    catch (Exception ex)
-    {
-        Console.Error.WriteLine(
-            "SPEECH RECOGNITION ERROR:"
-        );
 
-        Console.Error.WriteLine(
-            ex.ToString()
-        );
-
-        resultText.Text =
-            "❌ Speech recognition error.";
-    }
-}
-
+    // Checks whether the recognized word matches the target word.
     private bool IsCorrect(string recognizedText)
     {
         string expected = Normalize(targetWord);
@@ -436,6 +359,7 @@ public class SpeechPage : ContentPage
         return expected == actual;
     }
 
+    // Normalizes text before comparing words.
     private string Normalize(string text)
     {
         return text
@@ -443,12 +367,14 @@ public class SpeechPage : ContentPage
             .ToLowerInvariant();
     }
 
+    // Records and recognizes the user's speech.
     private async Task<string> ListenAndRecognize()
     {
         return await speechRecognizer
             .RecognizeAsync(targetWord);
     }
 
+    // Updates the result text while the word is being played.
     private void OnSentenceChanged(string? sentence)
     {
         Dispatcher.UIThread.Post(() =>
@@ -464,6 +390,7 @@ public class SpeechPage : ContentPage
         });
     }
 
+    // Skips the pronunciation activity and continues the story.
     private async void SkipButton_Click(object? sender, RoutedEventArgs e)
     {
         if (Navigation is not null)

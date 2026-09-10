@@ -4,6 +4,7 @@ using System.IO;
 
 namespace LittleLinguist.Services;
 
+// Stores the user's selected learning skills and manages their persistence.
 public class LearningSettings
 {
     public bool Pronunciation { get; set; } = true;
@@ -20,6 +21,7 @@ public class LearningSettings
     private static readonly string SettingsFile =
         Path.Combine(SettingsDirectory, "settings.json");
 
+    // Loads the saved settings or returns the default configuration.
     public static LearningSettings Load()
     {
         try
@@ -36,12 +38,11 @@ public class LearningSettings
         }
         catch
         {
-            // Si el archivo está corrupto o no se puede leer,
-            // usamos la configuración por defecto.
             return new LearningSettings();
         }
     }
 
+    // Saves the current settings to the configuration file.
     public void Save()
     {
         Directory.CreateDirectory(SettingsDirectory);

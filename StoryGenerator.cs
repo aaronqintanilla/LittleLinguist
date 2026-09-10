@@ -11,48 +11,52 @@ using System.Linq;
 using LLama.Transformers;
 
 /*
-FALTA:
-1. base de datos para que cambie la historia, siempre es repetitiva
+TO DO:
+1. Increase story variety. The generator currently tends to reuse the same
+   characters, locations, and actions. Possible solutions include using a
+   small database of predefined elements or testing a more powerful AI model,
+   while considering the Arduino's memory limitations.
+
+2. Improve story generation. Sometimes the model generates incoherent content
+   or includes parts of the prompt in the story. Possible solutions include
+   improving the prompts or testing another AI model, while considering the
+   available memory and hardware limitations.
+
+3. Adapt the story to the user's learning level. Use the results of the
+   learning activities to adjust the difficulty over time. For example,
+   generate shorter stories with simpler words for users who need more
+   practice, or longer stories with more advanced vocabulary as they improve.
 */
 
+// Generates children's stories and reading comprehension questions using a language model.
 public class StoryGenerator
 {
     public static StoryGenerator Instance {get;} = new StoryGenerator();
-
-    // Raised whenever the list of sentences changes, so the
-    // interface can redraw the story.
     public event Action<List<string>>? SentencesChanged;
-
     ChatSession? session;
     private LLamaContext? context;
     private readonly StringBuilder _currentSentence = new();
-
-    // All sentences generated so far, in order.
     private readonly List<string> _sentences = new();
-
     private LLamaWeights? model;
     private ModelParams? parameters;
-
-    // Cancels the story currently being generated.
     private CancellationTokenSource? _generation;
-
     InteractiveExecutor? executor;
     
+    // Initializes a new chat session for story generation.
     void InitSession()
     {
         if (executor is null) throw new NullReferenceException("Interactive Executor is null");
         if (model is null) throw new NullReferenceException("Model is null");
         session = new ChatSession(executor);
-        //session.AddSystemMessage("You write warm, simple and coherent children's stories. " +
-            //"Never mention prompts, instructions, paragraphs, models, generation, or story structure. Output narrative prose only.");
         session.WithHistoryTransform(
             new PromptTemplateTransformer(model, withAssistant: true)
         );
     }
 
+    // Loads the language model and initializes the inference context.
     public async Task LoadModel()
     {
-        //DESCARGAR y guardar en models
+        // Downloads and saves the model in the models folder.
         string modelPath = $"{System.IO.Directory.GetCurrentDirectory()}/models/gemma-3-1b-it-q4_0.gguf";
 
         parameters = new ModelParams(modelPath)
@@ -79,12 +83,12 @@ public class StoryGenerator
             """;
     }
 
+    // Creates the parameters used for story generation.
     private InferenceParams CreateInferenceParams()
     {
         return new InferenceParams
         {
             MaxTokens = 400,
-            //AntiPrompts = new List<string> { "<end_of_turn>", "</end_of_turn>", "<|im_end|>" },
             SamplingPipeline = new DefaultSamplingPipeline
             {
                 Temperature = 0.7f,
@@ -95,6 +99,7 @@ public class StoryGenerator
         };
     }
 
+    // Prints the current chat history to the console for debugging.
     public void DebugPrintChatHistory()
     {
         if (session is null)
@@ -109,18 +114,15 @@ public class StoryGenerator
         foreach (var message in session.History.Messages)
         {
             Console.WriteLine($"\n--- [Msg #{messageIndex++}] Role: {message.AuthorRole} ---");
-            
-            // Print the message text
             Console.WriteLine(message.Content);
         }
 
         Console.WriteLine("\n==================================================================\n");
     }
 
-    // Starts a new story.
+    // Starts a new story and generates its introduction.
     public async Task WriteIntroduction(string? objectDescription)
     {
-        // Only init session at the start of a story
         InitSession();
 
         if (objectDescription is null)
@@ -130,7 +132,6 @@ public class StoryGenerator
                 "Output only the story. The response must begin with Once upon a time. " +
                 "Do not include introductions, explanations or comments. " +
                 "End your response immediately after the third paragraph. ");
-            //await Generate("Write a children's story in three paragraphs. Start with Once upon a time.");
         }
         else
         {
@@ -160,7 +161,6 @@ public class StoryGenerator
             "Output only the story. Do not repeat what you already wrote. " +
             "Do not include introductions, explanations or comments. " +
             "End your response immediately after the third paragraph.");
-        //await Generate("Continue the previous story with three more paragraphs. Leave it open for the conclusion.");
     }
 
     // Brings the story to an end.
@@ -178,7 +178,6 @@ public class StoryGenerator
             "Output only the story. Do not repeat what you already wrote. " +
             "Do not include introductions, explanations or comments. " +
             "End your response immediately after the third paragraph.");
-        //await Generate("Write the conclusion to the story in three paragraphs.");
     }
 
     // Generates a story and writes it on screen token by token,
@@ -187,13 +186,10 @@ public class StoryGenerator
     {
         if (session is null) return;
 
-        // Pause the previous story and stop its audio.
         PauseStory();
-
         _generation = new CancellationTokenSource();
         CancellationToken token = _generation.Token;
-
-        string generatedText = "";  //Control
+        string generatedText = "";
 
         int tokens = 0;
         foreach (var message in session.History.Messages)
@@ -203,9 +199,6 @@ public class StoryGenerator
                 tokens++;
             }
         }
-
-        //Console.WriteLine("----- PROMPT -----");
-        //Console.WriteLine(prompt);
 
         try
         {
@@ -217,8 +210,6 @@ public class StoryGenerator
                 token.ThrowIfCancellationRequested();
 
                 generatedText += chunk;
-                //if (generatedText.Contains("```"))
-                    //break;
 
                 OnTokenReceived(chunk);
             }
@@ -228,14 +219,14 @@ public class StoryGenerator
         }
         catch (OperationCanceledException)
         {
-            // The user moved on to another story.
         }
 
         DebugPrintChatHistory();
         Console.WriteLine("CURRENT TOKEN COUNT: " + tokens);
     }
 
-   public async Task<List<ReadingQuestion>> GenerateReadingQuestions(
+    // Generates a simple reading comprehension question from the story.
+    public async Task<List<ReadingQuestion>> GenerateReadingQuestions(
     string story)
     {
         var questions = new List<ReadingQuestion>();
@@ -311,8 +302,6 @@ public class StoryGenerator
 
         try
         {
-            // Para las preguntas usamos una inferencia
-            // independiente de la historia.
             var questionExecutor =
                 new StatelessExecutor(
                     model,
@@ -351,10 +340,6 @@ public class StoryGenerator
 
         Console.WriteLine(text);
 
-        // Cada pregunta debe tener:
-        //
-        // pregunta | opción1 | opción2 | opción3 | respuesta
-
         string[] lines = text.Split(
             '\n',
             StringSplitOptions.RemoveEmptyEntries);
@@ -366,8 +351,6 @@ public class StoryGenerator
             string[] parts =
                 line.Split('|');
 
-            // Ahora esperamos 4 partes:
-            // pregunta | correcta | incorrecta | incorrecta
             if (parts.Length != 4)
                 continue;
 
@@ -391,7 +374,6 @@ public class StoryGenerator
                 continue;
             }
 
-            // Guardamos las opciones junto con si son correctas.
             var options = new List<(string Text, bool Correct)>
             {
                 (correct, true),
@@ -399,8 +381,6 @@ public class StoryGenerator
                 (wrong2, false)
             };
 
-            // Las mezclamos para que la correcta
-            // no aparezca siempre la primera.
             options = options
                 .OrderBy(_ => Random.Shared.Next())
                 .ToList();
@@ -430,6 +410,7 @@ public class StoryGenerator
         return questions;
     }
 
+    // Pauses story generation and clears the current story content.
     public void PauseStory()
     {
         _generation?.Cancel();
@@ -459,6 +440,7 @@ public class StoryGenerator
         SentencesChanged?.Invoke(new List<string>());
     }
 
+    // Stops story generation and audio without clearing the generated text.
     public void StopStoryKeepingText()
     {
         _generation?.Cancel();
@@ -469,15 +451,14 @@ public class StoryGenerator
 
         _currentSentence.Clear();
 
-        // IMPORTANTE:
-        // NO borramos _sentences
-        // NO avisamos a la interfaz con una lista vacía
+        // IMPORTANT:
+        // DO NOT clear _sentences.
+        // DO NOT notify the interface with an empty list.
     }
 
     // Called for every token produced by the language model.
     private void OnTokenReceived(string token)
     {
-        // Accumulate it until a full sentence is formed.
         _currentSentence.Append(token);
 
         if (EndsSentence(token))
@@ -486,7 +467,6 @@ public class StoryGenerator
         }
         else
         {
-            // Show the sentence being written, still incomplete.
             var preview = new List<string>(_sentences)
             {
                 _currentSentence.ToString()

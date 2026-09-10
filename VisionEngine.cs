@@ -1,22 +1,22 @@
 using System;
 using System.IO;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using LLama;
 using LLama.Common;
 using LLama.Native;
 using LLama.Sampling;
-using Llama.Grammar;
 using Llama.Grammar.Service;
 
+// Stores the object name and its short description.
 public class Character
 {
     public string Name { get; set; } = String.Empty;
     public string Description { get; set; } = String.Empty;
 }
 
+// Handles image analysis and object identification using the SmolVLM vision model.
 public class VisionEngine : IDisposable
 {
     public static VisionEngine Instance { get; } =
@@ -26,10 +26,7 @@ public class VisionEngine : IDisposable
     private LLamaContext? _context;
     private MtmdWeights? _visionModel;
     private InteractiveExecutor? _executor;
-
     private string _mediaMarker = "<media>";
-
-    // Evita analizar dos imágenes simultáneamente.
     private readonly SemaphoreSlim _lock = new(1, 1);
 
     // Forces a specific structure for the generated text: name of object & description
@@ -48,13 +45,9 @@ public class VisionEngine : IDisposable
     {
     }
 
-    // ---------------------------------------------------------
-    // CARGAR EL MODELO
-    // ---------------------------------------------------------
-
+    // Loads the SmolVLM vision model and initializes the image processing context.
     public async Task LoadModel()
     {
-        // Evita cargarlo dos veces.
         if (_model is not null)
         {
             return;
@@ -102,11 +95,7 @@ public class VisionEngine : IDisposable
         var mtmdParameters =
             MtmdContextParams.Default();
 
-        // Utilizamos CPU.
         mtmdParameters.UseGpu = false;
-
-
-        //Console.WriteLine("Loaded model...");
 
         try
         {
@@ -161,10 +150,7 @@ public class VisionEngine : IDisposable
         Console.WriteLine("SmolVLM loaded successfully.");
     }
 
-    // ---------------------------------------------------------
-    // IDENTIFICAR EL OBJETO
-    // ---------------------------------------------------------
-
+    // Analyzes an image and identifies its main physical object.
     public async Task<string> IdentifyObject(
         byte[] imageData)
     {
@@ -195,8 +181,6 @@ public class VisionEngine : IDisposable
                 $"Embeds after reset: {_executor.Embeds.Count}"
             );
 
-            // Convierte la imagen en información que entiende
-            // el modelo multimodal.
             var imageEmbed =
                 _visionModel.LoadMedia(imageData);
 
@@ -249,10 +233,7 @@ public class VisionEngine : IDisposable
         }
     }
 
-    // ---------------------------------------------------------
-    // CREAR EL PROMPT CORRECTO PARA SMOLVLM
-    // ---------------------------------------------------------
-
+    // Creates the prompt using the format expected by the SmolVLM model.
     private string CreatePrompt(string userMessage)
     {
         if (_model is null)
@@ -291,10 +272,7 @@ public class VisionEngine : IDisposable
         );
     }
 
-    // ---------------------------------------------------------
-    // LIMPIAR LA IMAGEN ANTERIOR
-    // ---------------------------------------------------------
-
+    // Clears the previous image data and its embeddings before processing a new image.
     private void ClearPreviousImage()
     {
         if (
@@ -306,10 +284,8 @@ public class VisionEngine : IDisposable
             return;
         }
 
-        // Limpia la memoria de la conversación anterior.
         _context.NativeHandle.MemoryClear();
 
-        // Libera los embeddings de la imagen anterior.
         foreach (var embed in _executor.Embeds)
         {
             embed.Dispose();
@@ -319,14 +295,10 @@ public class VisionEngine : IDisposable
 
         _executor = new InteractiveExecutor(_context, _visionModel);
 
-        // Limpia los datos multimedia anteriores.
         _visionModel.ClearMedia();
     }
 
-    // ---------------------------------------------------------
-    // LIBERAR RECURSOS
-    // ---------------------------------------------------------
-
+    // Releases the vision model, context, embeddings, and synchronization resources.
     public void Dispose()
     {
         ClearPreviousImage();

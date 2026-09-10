@@ -27,31 +27,14 @@ public class SpeechReader : IDisposable
     // if the speed changes. The first one is the sentence playing now.
     private readonly List<string> _pendingSentences = new();
     private readonly object _pendingLock = new();
-
-    // Playback speed. Below 1.0 is faster, above 1.0 is slower.
     private float _lengthScale = 1.2f;
-
-    // The playback process currently running, if any.
     private Process? _currentPlayback;
     private readonly object _playbackLock = new();
-
-    // Identifies the current playback session.
-    // Incremented whenever queued work must be discarded.
     private int _sessionId;
-
-    // Blocks the playback loop while paused. Starts in the paused state.
     private readonly ManualResetEventSlim _playGate = new(false);
-
-    // True while audio is allowed to play.
     public bool IsPlaying => _playGate.IsSet;
-
-    // Sentences waiting to be converted into audio.
     private readonly BlockingCollection<(int Session, string Text)> _textQueue = new();
-
-    // Audio files already generated, waiting to be played.
     private readonly BlockingCollection<(int Session, string Text, string File)> _audioQueue = new(2);
-
-    // Used to stop the background loops when the application closes.
     private readonly CancellationTokenSource _cancellation = new();
 
     // Locates the required files, verifies they exist and starts
@@ -60,7 +43,6 @@ public class SpeechReader : IDisposable
     {
         string basePath = Path.Combine(AppContext.BaseDirectory, "resources");
 
-        // On windows, executable name is piper.exe, on UNIX-like, only piper
         _piperPath = OperatingSystem.IsWindows() ? Path.Combine(basePath, "piper", "piper.exe") : Path.Combine(basePath, "piper", "piper");
         _modelPath = Path.Combine(basePath, "voices", "en_US-lessac-medium.onnx");
 
@@ -140,13 +122,11 @@ public class SpeechReader : IDisposable
 
         _lengthScale = newScale;
 
-        // Invalidate the audio generated at the old speed.
         Interlocked.Increment(ref _sessionId);
 
         DrainQueues();
         KillPlayback();
 
-        // Requeue the same sentences under the new session.
         List<string> remaining;
 
         lock (_pendingLock)
@@ -175,7 +155,6 @@ public class SpeechReader : IDisposable
             {
                 GenerateAudio(item.Text, tempFile);
 
-                // Check again: the session may have changed while generating.
                 if (item.Session != Volatile.Read(ref _sessionId))
                 {
                     File.Delete(tempFile);
@@ -215,7 +194,6 @@ public class SpeechReader : IDisposable
                 {
                     _playGate.Wait(_cancellation.Token);
 
-                    // The session changed: this audio is no longer valid.
                     if (item.Session != Volatile.Read(ref _sessionId))
                         break;
 
@@ -230,17 +208,13 @@ public class SpeechReader : IDisposable
                         break;
                     }
 
-                    // If the gate is still open, playback ended naturally.
-                    // If it is closed, Pause() cut it short: wait and replay.
                     finished = _playGate.IsSet;
                 }
 
                 if (finished)
                 {
-                    // Nothing is being read now.
                     SentenceChanged?.Invoke(null);
 
-                    // Remove it from the pending list only if it was spoken.
                     if (item.Session == Volatile.Read(ref _sessionId))
                     {
                         lock (_pendingLock)
@@ -257,7 +231,6 @@ public class SpeechReader : IDisposable
         }
         catch (OperationCanceledException)
         {
-            // The application is closing.
         }
     }
 
@@ -328,7 +301,6 @@ public class SpeechReader : IDisposable
             RedirectStandardError = true
         };
         
-        // -q is quiet mode, only available in linux aplay, but not in macos afplay
         if (OperatingSystem.IsLinux()) info.ArgumentList.Add("-q");
         info.ArgumentList.Add(filePath);
 
@@ -380,7 +352,6 @@ public class SpeechReader : IDisposable
             }
             catch (InvalidOperationException)
             {
-                // The process had already finished. Nothing to do.
             }
         }
     }
@@ -391,7 +362,7 @@ public class SpeechReader : IDisposable
         Stop();
 
         _cancellation.Cancel();
-        _playGate.Set();          // release the playback loop so it can exit
+        _playGate.Set();
 
         _textQueue.CompleteAdding();
         _audioQueue.CompleteAdding();

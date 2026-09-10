@@ -11,24 +11,20 @@ using Avalonia.Threading;
 
 namespace LittleLinguist.Pages;
 
+// Displays reading comprehension questions about the story.
 public class ReadingComprehensionPage : ContentPage
 {
     private readonly Action? _onCompleted;
-
     private readonly TextBlock _questionText;
     private readonly TextBlock _feedbackText;
-
     private readonly StackPanel _optionsPanel;
-
     private readonly Button _continueButton;
-
     private List<ReadingQuestion> _questions = new();
-
     private int _currentQuestion = 0;
-
     private bool _answered = false;
     private bool _isFinishing = false;
 
+    // Initializes the reading comprehension page and its user interface.
     public ReadingComprehensionPage(string story, Action? onCompleted = null)
     {
         _onCompleted = onCompleted;
@@ -38,18 +34,10 @@ public class ReadingComprehensionPage : ContentPage
             false
         );
 
-        // ---------------------------------------------------------
-        // FONDO
-        // ---------------------------------------------------------
-
         Background =
             new SolidColorBrush(
                 Color.Parse("#EDE7FF")
             );
-
-        // ---------------------------------------------------------
-        // TÍTULO
-        // ---------------------------------------------------------
 
         var title =
             new TextBlock
@@ -72,11 +60,6 @@ public class ReadingComprehensionPage : ContentPage
                 HorizontalAlignment =
                     HorizontalAlignment.Center
             };
-
-
-        // ---------------------------------------------------------
-        // PREGUNTA
-        // ---------------------------------------------------------
 
         _questionText =
             new TextBlock
@@ -122,10 +105,6 @@ public class ReadingComprehensionPage : ContentPage
                     HorizontalAlignment.Center
             };
 
-        // ---------------------------------------------------------
-        // OPCIONES
-        // ---------------------------------------------------------
-
         _optionsPanel =
             new StackPanel
             {
@@ -134,10 +113,6 @@ public class ReadingComprehensionPage : ContentPage
                 HorizontalAlignment =
                     HorizontalAlignment.Stretch
             };
-
-        // ---------------------------------------------------------
-        // FEEDBACK
-        // ---------------------------------------------------------
 
         _feedbackText =
             new TextBlock
@@ -163,10 +138,6 @@ public class ReadingComprehensionPage : ContentPage
                 HorizontalAlignment =
                     HorizontalAlignment.Stretch
             };
-
-        // ---------------------------------------------------------
-        // CONTINUE
-        // ---------------------------------------------------------
 
         _continueButton =
             new Button
@@ -209,10 +180,6 @@ public class ReadingComprehensionPage : ContentPage
         _continueButton.Click +=
             ContinueButton_Click;
 
-        // ---------------------------------------------------------
-        // SKIP / FINISH
-        // ---------------------------------------------------------
-
         var skipButton =
             new Button
             {
@@ -252,10 +219,6 @@ public class ReadingComprehensionPage : ContentPage
 
         skipButton.Click +=
             SkipButton_Click;
-
-        // ---------------------------------------------------------
-        // TARJETA DE LA PREGUNTA
-        // ---------------------------------------------------------
 
         var questionPanel =
             new StackPanel
@@ -308,10 +271,6 @@ public class ReadingComprehensionPage : ContentPage
                     questionPanel
             };
 
-        // ---------------------------------------------------------
-        // PANEL CENTRAL
-        // ---------------------------------------------------------
-
         var centerPanel =
             new StackPanel
             {
@@ -335,10 +294,6 @@ public class ReadingComprehensionPage : ContentPage
         centerPanel.Children.Add(
             questionCard
         );
-
-        // ---------------------------------------------------------
-        // DECORACIÓN
-        // ---------------------------------------------------------
 
         var star1 =
             new TextBlock
@@ -471,10 +426,6 @@ public class ReadingComprehensionPage : ContentPage
                     )
             };
 
-        // ---------------------------------------------------------
-        // GRID PRINCIPAL
-        // ---------------------------------------------------------
-
         var mainGrid =
             new Grid
             {
@@ -485,10 +436,8 @@ public class ReadingComprehensionPage : ContentPage
                     RowDefinitions.Parse("*,Auto")
             };
 
-        // El contenido central ocupa la primera fila
         Grid.SetRow(centerPanel, 0);
 
-        // Finish ocupa una fila independiente debajo
         Grid.SetRow(skipButton, 1);
 
         mainGrid.Children.Add(
@@ -522,13 +471,10 @@ public class ReadingComprehensionPage : ContentPage
         Content =
             mainGrid;
 
-        // ---------------------------------------------------------
-        // PREGUNTA RECIBIDA
-        // ---------------------------------------------------------
-
         _ = LoadQuestions(story);
     }
 
+    // Generates the reading questions from the story.
     private async Task LoadQuestions(
         string story)
     {
@@ -580,10 +526,8 @@ public class ReadingComprehensionPage : ContentPage
             });
         }
     }
-    // ---------------------------------------------------------
-    // MOSTRAR PREGUNTA
-    // ---------------------------------------------------------
 
+    // Displays the current question and its answer options.
     private void ShowQuestion()
     {
         _answered = false;
@@ -662,10 +606,7 @@ public class ReadingComprehensionPage : ContentPage
         }
     }
 
-    // ---------------------------------------------------------
-    // RESPONDER
-    // ---------------------------------------------------------
-
+    // Checks the selected answer and shows feedback.
     private void AnswerButton_Click(
         object? sender,
         RoutedEventArgs e)
@@ -704,7 +645,6 @@ public class ReadingComprehensionPage : ContentPage
                 $"❌ Not quite. The answer is: {answer}";
         }
 
-        // Ya no se puede responder otra vez.
         foreach (
             Button optionButton
             in _optionsPanel.Children
@@ -718,10 +658,7 @@ public class ReadingComprehensionPage : ContentPage
             true;
     }
 
-    // ---------------------------------------------------------
-    // SIGUIENTE PREGUNTA
-    // ---------------------------------------------------------
-
+    // Moves to the next question or finishes the activity.
     private async void ContinueButton_Click(
         object? sender,
         RoutedEventArgs e)
@@ -739,7 +676,6 @@ public class ReadingComprehensionPage : ContentPage
             return;
         }
 
-        // Hemos terminado todas.
         _isFinishing = true;
 
         _continueButton.IsEnabled =
@@ -750,10 +686,10 @@ public class ReadingComprehensionPage : ContentPage
             await Navigation.PopAsync();
         }
 
-        // Continúa la historia.
         _onCompleted?.Invoke();
     }
 
+    // Skips the activity and continues the story.
     private async void SkipButton_Click(object? sender, RoutedEventArgs e)
     {
         if (Navigation is not null)

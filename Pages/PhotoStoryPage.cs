@@ -5,11 +5,6 @@ using Avalonia.Media;
 using Avalonia.Interactivity;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using LLama;
-using LLama.Common;
-using LLama.Sampling;
-using System.Threading.Tasks;
 using Avalonia.Controls.Primitives;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -18,28 +13,22 @@ using Avalonia.Controls.Documents;
 using Avalonia.Threading;
 using LittleLinguist.Services;
 
-/*
-FALTA:
-1. historias diferentes
-*/
-
+// Displays a photo-based story and manages the learning activities.
 public class PhotoStoryPage : ContentPage
 {
     TextBlock storyText = new TextBlock();
-
-    // Botón Play
     Button playButton = new Button();
 
     int cont = 0;
     private List<string> _sentences = new();
     private string? _speakingSentence;
 
+    // Initializes the photo story page and its user interface.
     public PhotoStoryPage()
     {
         NavigationPage.SetHasBackButton(this, false);
         Background = new SolidColorBrush(Color.Parse("#EDE7FF"));
         
-        // Grid principal
         var grid = new Grid
         {
             Margin = new Thickness(35, 20)
@@ -51,7 +40,6 @@ public class PhotoStoryPage : ContentPage
         grid.RowDefinitions.Add(
             new RowDefinition(GridLength.Auto));
 
-        // Decoración
         var header = new Grid
         {
             Height = 80
@@ -94,13 +82,11 @@ public class PhotoStoryPage : ContentPage
 
         Grid.SetRow(header, 0);
 
-        // Texto de la historia
         storyText.TextWrapping = TextWrapping.Wrap;
         storyText.FontSize = 19;
         storyText.Foreground = new SolidColorBrush(
             Color.Parse("#465477"));
 
-        // Scroll para el texto
         var scrollViewer = new ScrollViewer
         {
             Content = storyText,
@@ -115,7 +101,6 @@ public class PhotoStoryPage : ContentPage
 
         Grid.SetRow(scrollViewer, 1);
 
-        // Panel para los botones
         var buttonPanel = new Grid
         {
             ColumnDefinitions =
@@ -123,7 +108,6 @@ public class PhotoStoryPage : ContentPage
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
 
-        // Botón Finish
         var finishButton = new Button
         {
             Content = "🏠 Finish",
@@ -139,7 +123,6 @@ public class PhotoStoryPage : ContentPage
 
         finishButton.Click += FinishButton_Click;
 
-        // Botón Next
         var nextButton = new Button
         {
             Content = "⭐ Next",
@@ -155,7 +138,6 @@ public class PhotoStoryPage : ContentPage
 
         nextButton.Click += NextButton_Click;
 
-        // Botón Play / Pause
         playButton.Content = "▶ Play";
         playButton.Padding = new Thickness(22, 13);
         playButton.FontSize = 17;
@@ -168,7 +150,6 @@ public class PhotoStoryPage : ContentPage
 
         playButton.Click += PlayButton_Click;
 
-        // Slider de velocidad: a la derecha, más rápido
         var speedSlider = new Slider
         {
             Minimum = 0.5,
@@ -231,10 +212,9 @@ public class PhotoStoryPage : ContentPage
         SpeechReader.Instance.SentenceChanged += OnSpeakingSentenceChanged;
     }
 
-    // Vuelve a la página anterior (Home)
+    // Ends the program
     private async void FinishButton_Click(object? sender, RoutedEventArgs e)
     {
-        //REVISAR
         StoryGenerator.Instance.StopStory();
         if(Navigation is not null)
         {
@@ -242,7 +222,7 @@ public class PhotoStoryPage : ContentPage
         }
     }
 
-    // Pasa a la siguiente página con una palabra de la historia
+    // Selects a learning activity based on the enabled skills.
     private async void NextButton_Click(object? sender, RoutedEventArgs e)
     {
         if (Navigation is null)
@@ -257,17 +237,12 @@ public class PhotoStoryPage : ContentPage
             return;
         }
 
-        // Guardamos el texto antes de parar, porque StopStory
-        // vacía la lista de frases.
         string story = string.Join(" ", _sentences);
 
-        // Detiene la generación y la lectura.
-        //StoryGenerator.Instance.StopStory();
         StoryGenerator.Instance.PauseStory();
         SpeechReader.Instance.Pause();
         playButton.Content = "Play";
 
-        // Extrae palabras de entre 3 y 10 letras.
         List<string> words = Regex
             .Matches(story, @"\b[A-Za-z]{3,10}\b")
             .Select(match => match.Value)
@@ -345,16 +320,16 @@ public class PhotoStoryPage : ContentPage
         {
             await Navigation.PushAsync(page);
         }
-
-        //BUG: await Navigation.PushAsync(new WritingPage(randomWord, StartStory));
     }
 
+    // Identifies the photographed object and starts the story.
     public async void StartStory(byte[] imageData)
     {
         string objectDescription = await VisionEngine.Instance.IdentifyObject(imageData);
         await Session.Instance.WriteNextPart(objectDescription);
     }
 
+    // Continues the story after completing a learning activity.
     public async void ContinueStory()
     {
         if (Session.Instance.IsFinished && Navigation is not null)
@@ -368,16 +343,7 @@ public class PhotoStoryPage : ContentPage
         await Session.Instance.WriteNextPart(null);
     }
 
-    /*public async void StartStory(byte[] imageData)
-    {
-        //string respuesta = await VisionEngine.Instance.IdentifyObject(imageData);
-        //storyText.Text = respuesta;
-
-        string objectDescription = await VisionEngine.Instance.IdentifyObject(imageData);
-        await StoryGenerator.Instance.WriteStoryFromCharacter(storyText, objectDescription);
-    }*/
-
-    // Alterna entre reproducir y pausar el audio
+    // Toggles story narration between play and pause.
     private void PlayButton_Click(object? sender, RoutedEventArgs e)
     {
         if (SpeechReader.Instance.IsPlaying)
@@ -392,29 +358,27 @@ public class PhotoStoryPage : ContentPage
         }
     }
 
-    // Ajusta la velocidad de lectura.
-    // El slider va de lento (izquierda) a rápido (derecha),
-    // mientras que Piper usa la escala contraria.
+    // Adjusts the narration speed.
     private void SpeedSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
         SpeechReader.Instance.SetSpeed((float)(3.0 - e.NewValue));
     }
 
-    // Llega una nueva lista de frases desde el generador.
+    // Updates the displayed story when new sentences are generated.
     private void OnSentencesChanged(List<string> sentences)
     {
         _sentences = sentences;
         Dispatcher.UIThread.Post(RefreshStoryText);
     }
 
-    // Cambia la frase que se está leyendo en voz alta.
+    // Updates the sentence currently being narrated.
     private void OnSpeakingSentenceChanged(string? sentence)
     {
         _speakingSentence = sentence;
         Dispatcher.UIThread.Post(RefreshStoryText);
     }
 
-    // Redibuja la historia, resaltando la frase que se está leyendo.
+    // Refreshes the story text and highlights the sentence being narrated.
     private void RefreshStoryText()
     {
         if (storyText.Inlines is null) return;
@@ -440,6 +404,7 @@ public class PhotoStoryPage : ContentPage
         }
     }
 
+    // Unsubscribes from events and stops the story.
     public void Cleanup()
     {
         StoryGenerator.Instance.SentencesChanged -= OnSentencesChanged;

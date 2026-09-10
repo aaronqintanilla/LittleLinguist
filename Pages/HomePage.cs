@@ -1,9 +1,3 @@
-using System;
-using System.IO;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -12,23 +6,17 @@ using Avalonia.Media;
 
 namespace LittleLinguist.Pages;
 
+// Displays the main menu and provides navigation to the app's main features.
 public class HomePage : ContentPage
 {
     private SettingsPage? settingsPage;
     private StoryPage? storyPage;
     private PhotoStoryPage? PhotoStoryPage;
 
+    // Initializes the home page and its user interface.
     public HomePage()
     {
-        // ---------------------------------------------------------
-        // FONDO
-        // ---------------------------------------------------------
-
         Background = new SolidColorBrush(Color.Parse("#EDE7FF"));
-
-        // ---------------------------------------------------------
-        // BOTÓN SETTINGS
-        // ---------------------------------------------------------
 
         var settingsIcon = new TextBlock
         {
@@ -53,10 +41,6 @@ public class HomePage : ContentPage
 
         settingsButton.Click += SettingsButton_Click;
 
-        // ---------------------------------------------------------
-        // TÍTULO
-        // ---------------------------------------------------------
-
         var title = new TextBlock
         {
             Text = "✨ Little Linguist ✨",
@@ -67,10 +51,6 @@ public class HomePage : ContentPage
             HorizontalAlignment = HorizontalAlignment.Center
         };
 
-        // ---------------------------------------------------------
-        // SUBTÍTULO
-        // ---------------------------------------------------------
-
         var subtitle = new TextBlock
         {
             Text = "Learn languages through a new adventure!",
@@ -80,10 +60,6 @@ public class HomePage : ContentPage
             TextWrapping = TextWrapping.Wrap,
             HorizontalAlignment = HorizontalAlignment.Center
         };
-
-        // ---------------------------------------------------------
-        // DECORACIÓN - ESTRELLAS
-        // ---------------------------------------------------------
 
         var star1 = new TextBlock
         {
@@ -145,10 +121,6 @@ public class HomePage : ContentPage
             Margin = new Thickness(220, 0, 0, 85)
         };
 
-        // ---------------------------------------------------------
-        // DECORACIÓN - NUBES
-        // ---------------------------------------------------------
-
         var cloud1 = new TextBlock
         {
             Text = "☁",
@@ -189,10 +161,6 @@ public class HomePage : ContentPage
             Margin = new Thickness(0, 75, 220, 0)
         };
 
-        // ---------------------------------------------------------
-        // DECORACIÓN - LUNA
-        // ---------------------------------------------------------
-
         var moon = new TextBlock
         {
             Text = "☾",
@@ -202,10 +170,6 @@ public class HomePage : ContentPage
             VerticalAlignment = VerticalAlignment.Top,
             Margin = new Thickness(75, 220, 0, 0)
         };
-
-        // ---------------------------------------------------------
-        // BOTÓN STORY
-        // ---------------------------------------------------------
 
         var storyIcon = new TextBlock
         {
@@ -249,10 +213,6 @@ public class HomePage : ContentPage
 
         storyButton.Click += StoryButton_Click;
 
-        // ---------------------------------------------------------
-        // BOTÓN PHOTO
-        // ---------------------------------------------------------
-
         var visionIcon = new TextBlock
         {
             Text = "📸",
@@ -295,10 +255,6 @@ public class HomePage : ContentPage
 
         visionButton.Click += VisionButton_Click;
 
-        // ---------------------------------------------------------
-        // PANEL CENTRAL
-        // ---------------------------------------------------------
-
         var centerPanel = new StackPanel
         {
             Width = 500,
@@ -314,16 +270,11 @@ public class HomePage : ContentPage
             }
         };
 
-        // ---------------------------------------------------------
-        // GRID PRINCIPAL
-        // ---------------------------------------------------------
-
         var mainGrid = new Grid
         {
             Margin = new Thickness(40)
         };
 
-        // Decoraciones
         mainGrid.Children.Add(star1);
         mainGrid.Children.Add(star2);
         mainGrid.Children.Add(star3);
@@ -338,16 +289,14 @@ public class HomePage : ContentPage
 
         mainGrid.Children.Add(moon);
 
-        // Botón Settings
         mainGrid.Children.Add(settingsButton);
 
-        // Panel principal
         mainGrid.Children.Add(centerPanel);
 
         Content = mainGrid;
     }
 
-    // Abre SettingsPage.
+    // Opens the settings page.
     private async void SettingsButton_Click(
         object? sender,
         RoutedEventArgs e)
@@ -360,6 +309,7 @@ public class HomePage : ContentPage
         }
     }
 
+    // Starts a new story adventure and opens the story page.
     private async void StoryButton_Click(
         object? sender,
         RoutedEventArgs e)
@@ -384,6 +334,7 @@ public class HomePage : ContentPage
         }
     }
 
+    // Opens the camera page and starts the camera preview.
     private async void VisionButton_Click(
         object? sender,
         RoutedEventArgs e)

@@ -9,21 +9,18 @@ using Avalonia.Media;
 
 namespace LittleLinguist.Controls;
 
+// Handles the drawing canvas and evaluates how accurately the word is traced.
 public class TracingCanvas : Control
 {
-    // Cada lista representa un trazo diferente.
-    // Los puntos se guardan relativamente a la palabra.
+    // Each list represents a different stroke.
+    // Points are stored relative to the word.
     private readonly List<List<Point>> _strokes = new();
-
     private List<Point>? _currentStroke;
     private bool _isDrawing;
-
-    // Palabra que debe repasarse.
     public string TargetWord { get; set; } = "APPLE";
-
-    // Tamaño máximo de la palabra.
     public double GuideFontSize { get; set; } = 120;
 
+    // Initializes the tracing canvas and pointer event handlers.
     public TracingCanvas()
     {
         MinHeight = 250;
@@ -34,10 +31,7 @@ public class TracingCanvas : Control
         PointerReleased += OnPointerReleased;
     }
 
-    // =========================================================
-    // DIBUJAR EL CONTROL
-    // =========================================================
-
+    // Draws the guide word and the user's strokes on the canvas.
     public override void Render(DrawingContext context)
     {
         base.Render(context);
@@ -49,7 +43,6 @@ public class TracingCanvas : Control
 
         var drawingArea = new Rect(Bounds.Size);
 
-        // Fondo blanco y borde rosa.
         context.DrawRectangle(
             Brushes.White,
             new Pen(
@@ -61,7 +54,6 @@ public class TracingCanvas : Control
             15
         );
 
-        // Calculamos un tamaño de letra que quepa en el lienzo.
         double fontSize = GetFittedFontSize();
 
         FormattedText formattedWord =
@@ -70,7 +62,6 @@ public class TracingCanvas : Control
         Point textOrigin =
             GetTextOrigin(formattedWord);
 
-        // Dibujamos la palabra guía.
         context.DrawText(
             formattedWord,
             textOrigin
@@ -79,7 +70,6 @@ public class TracingCanvas : Control
         var inkBrush =
             new SolidColorBrush(Color.Parse("#872589"));
 
-        // El grosor también se adapta al tamaño de la palabra.
         double inkThickness =
             Math.Clamp(fontSize * 0.07, 4, 10);
 
@@ -88,7 +78,6 @@ public class TracingCanvas : Control
 
         foreach (List<Point> stroke in _strokes)
         {
-            // Convertimos los puntos relativos a posiciones reales.
             List<Point> absolutePoints = stroke
                 .Select(point =>
                     ToAbsolute(
@@ -104,7 +93,6 @@ public class TracingCanvas : Control
                 continue;
             }
 
-            // Si solo hay un punto, dibujamos un pequeño círculo.
             if (absolutePoints.Count == 1)
             {
                 double radius = inkThickness / 2;
@@ -120,7 +108,6 @@ public class TracingCanvas : Control
                 continue;
             }
 
-            // Unimos los puntos consecutivos.
             for (int i = 1; i < absolutePoints.Count; ++i)
             {
                 context.DrawLine(
@@ -132,12 +119,7 @@ public class TracingCanvas : Control
         }
     }
 
-    // =========================================================
-    // COORDENADAS RELATIVAS
-    // =========================================================
-
-    // Convierte una posición real en una posición relativa
-    // respecto a la palabra.
+    // Converts an absolute position into coordinates relative to the word.
     private static Point ToRelative(
         Point absolutePoint,
         FormattedText formattedWord,
@@ -155,7 +137,7 @@ public class TracingCanvas : Control
         );
     }
 
-    // Convierte una posición relativa en una posición real.
+    // Converts a relative position back into absolute canvas coordinates.
     private static Point ToAbsolute(
         Point relativePoint,
         FormattedText formattedWord,
@@ -170,10 +152,7 @@ public class TracingCanvas : Control
         );
     }
 
-    // =========================================================
-    // EVENTOS DEL RATÓN, DEDO O LÁPIZ
-    // =========================================================
-
+    // Starts a new stroke when the user presses the pointer.
     private void OnPointerPressed(
         object? sender,
         PointerPressedEventArgs e)
@@ -194,7 +173,6 @@ public class TracingCanvas : Control
         Point absolutePoint =
             e.GetPosition(this);
 
-        // Creamos un nuevo trazo.
         _currentStroke = new List<Point>
         {
             ToRelative(
@@ -207,8 +185,6 @@ public class TracingCanvas : Control
         _strokes.Add(_currentStroke);
         _isDrawing = true;
 
-        // Seguimos recibiendo eventos aunque el puntero
-        // se desplace fuera del control.
         e.Pointer.Capture(this);
 
         e.Handled = true;
@@ -216,6 +192,7 @@ public class TracingCanvas : Control
         InvalidateVisual();
     }
 
+    // Starts a new stroke when the user presses the pointer.
     private void OnPointerMoved(
         object? sender,
         PointerEventArgs e)
@@ -236,7 +213,6 @@ public class TracingCanvas : Control
         Point newAbsolutePoint =
             e.GetPosition(this);
 
-        // Convertimos el punto anterior a coordenadas reales.
         Point previousAbsolutePoint = ToAbsolute(
             _currentStroke[^1],
             formattedWord,
@@ -249,7 +225,6 @@ public class TracingCanvas : Control
         double differenceY =
             newAbsolutePoint.Y - previousAbsolutePoint.Y;
 
-        // Evitamos almacenar puntos prácticamente iguales.
         if (
             differenceX * differenceX +
             differenceY * differenceY >= 1
@@ -269,6 +244,7 @@ public class TracingCanvas : Control
         e.Handled = true;
     }
 
+    // Adds points to the current stroke while the user draws.
     private void OnPointerReleased(
         object? sender,
         PointerReleasedEventArgs e)
@@ -280,10 +256,7 @@ public class TracingCanvas : Control
         e.Handled = true;
     }
 
-    // =========================================================
-    // BORRAR
-    // =========================================================
-
+    // Ends the current stroke when the user releases the pointer.
     public void Clear()
     {
         _strokes.Clear();
@@ -293,10 +266,7 @@ public class TracingCanvas : Control
         InvalidateVisual();
     }
 
-    // =========================================================
-    // CALCULAR LA PUNTUACIÓN
-    // =========================================================
-
+    // Clears all user strokes from the canvas.
     public double CalculateScore()
     {
         if (
@@ -316,8 +286,8 @@ public class TracingCanvas : Control
         Point wordOrigin =
             GetTextOrigin(formattedWord);
 
-        // Convertimos todos los puntos relativos
-        // a sus posiciones reales actuales.
+        // We convert all relative points
+        // to their current absolute positions.
         List<Point> userPoints = _strokes
             .SelectMany(stroke => stroke)
             .Select(point =>
@@ -329,13 +299,12 @@ public class TracingCanvas : Control
             )
             .ToList();
 
-        // No se ha escrito suficiente.
         if (userPoints.Count < 20)
         {
             return 0;
         }
 
-        // Convertimos la palabra completa en una geometría.
+        // We convert the entire word into a geometry.
         Geometry? wordGeometry =
             formattedWord.BuildGeometry(wordOrigin);
 
@@ -344,15 +313,12 @@ public class TracingCanvas : Control
             return 0;
         }
 
-        // La tolerancia se adapta al tamaño de las letras.
         double toleranceWidth =
             Math.Max(6, fontSize * 0.16);
 
         var tolerancePen =
             new Pen(Brushes.Black, toleranceWidth);
 
-        // Contamos los puntos que están dentro
-        // o cerca de las letras.
         int validPointCount = userPoints.Count(point =>
             wordGeometry.FillContains(point) ||
             wordGeometry.StrokeContains(
@@ -364,14 +330,10 @@ public class TracingCanvas : Control
         double precision =
             validPointCount / (double)userPoints.Count;
 
-        // -----------------------------------------------------
-        // COBERTURA DE LAS LETRAS
-        // -----------------------------------------------------
-
         double totalLetterCoverage = 0;
         int evaluatedLetters = 0;
 
-        // Distancia máxima para considerar cubierta una zona.
+        // Maximum distance for considering an area covered.
         double coverageRadius =
             Math.Max(6, fontSize * 0.15);
 
@@ -407,7 +369,6 @@ public class TracingCanvas : Control
             Rect bounds =
                 letterGeometry.Bounds;
 
-            // Cuadrícula invisible de cada letra.
             const int rows = 8;
             const int columns = 6;
 
@@ -422,7 +383,6 @@ public class TracingCanvas : Control
                     ++column
                 )
                 {
-                    // Centro de la casilla actual.
                     Point samplePoint = new Point(
                         bounds.X +
                         (column + 0.5) *
@@ -433,8 +393,6 @@ public class TracingCanvas : Control
                         bounds.Height / rows
                     );
 
-                    // Ignoramos las casillas que no forman
-                    // parte de la letra.
                     if (
                         !letterGeometry.FillContains(
                             samplePoint
@@ -446,8 +404,6 @@ public class TracingCanvas : Control
 
                     ++targetCells;
 
-                    // Miramos si el niño ha dibujado
-                    // cerca de esta zona.
                     bool isCovered = userPoints.Any(point =>
                         DistanceSquared(
                             point,
@@ -483,17 +439,13 @@ public class TracingCanvas : Control
                 : totalLetterCoverage /
                   evaluatedLetters;
 
-        // Debe estar cerca de las letras y cubrirlas.
         double score =
             precision * averageLetterCoverage;
 
         return Math.Clamp(score, 0, 1);
     }
 
-    // =========================================================
-    // CREACIÓN Y ADAPTACIÓN DEL TEXTO
-    // =========================================================
-
+    // Creates the formatted text used to display and measure the word.
     private FormattedText CreateFormattedText(
         string text,
         double fontSize)
@@ -517,7 +469,7 @@ public class TracingCanvas : Control
         );
     }
 
-    // Calcula el tamaño máximo que cabe dentro del lienzo.
+    // Calculates the largest font size that fits inside the canvas.
     private double GetFittedFontSize()
     {
         if (string.IsNullOrWhiteSpace(TargetWord))
@@ -528,14 +480,12 @@ public class TracingCanvas : Control
         double maximumFontSize =
             Math.Max(1, GuideFontSize);
 
-        // Medimos primero la palabra con el tamaño máximo.
         FormattedText maximumText =
             CreateFormattedText(
                 TargetWord,
                 maximumFontSize
             );
 
-        // Dejamos 20 píxeles de margen en cada lado.
         double availableWidth =
             Math.Max(1, Bounds.Width - 40);
 
@@ -550,7 +500,6 @@ public class TracingCanvas : Control
             availableHeight /
             Math.Max(1, maximumText.Height);
 
-        // Elegimos la reducción más restrictiva.
         double scale = Math.Min(
             1,
             Math.Min(widthScale, heightScale)
@@ -562,7 +511,7 @@ public class TracingCanvas : Control
         );
     }
 
-    // Centra la palabra en el lienzo.
+    // Calculates the position needed to center the word on the canvas.
     private Point GetTextOrigin(
         FormattedText text)
     {
@@ -578,7 +527,7 @@ public class TracingCanvas : Control
         );
     }
 
-    // Mide cuánto ocupan las letras anteriores.
+    // Measures the width of the characters before a given position.
     private double MeasurePrefixWidth(
         int characterCount,
         double fontSize)
@@ -600,6 +549,7 @@ public class TracingCanvas : Control
         return formattedPrefix.Width;
     }
 
+    // Calculates the squared distance between two points.
     private static double DistanceSquared(
         Point first,
         Point second)

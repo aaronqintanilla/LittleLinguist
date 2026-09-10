@@ -37,9 +37,7 @@ download() {
 
 echo "Detected platform: $OS $ARCH"
 
-# ============================================================
 # Piper platform configuration
-# ============================================================
 
 case "$OS/$ARCH" in
 
@@ -83,9 +81,7 @@ esac
 mkdir -p "$BASE/voices"
 cd "$BASE"
 
-# ============================================================
 # Piper installation
-# ============================================================
 
 PIPER_DIR="$BASE/piper"
 PIPER_BINARY="$BASE/$PIPER_EXECUTABLE"
@@ -95,9 +91,7 @@ echo "Checking Piper installation..."
 
 PIPER_NEEDS_INSTALL=false
 
-# ------------------------------------------------------------
 # Check executable
-# ------------------------------------------------------------
 
 if [ ! -x "$PIPER_BINARY" ]; then
     echo "  ❌ Piper executable is missing."
@@ -109,9 +103,7 @@ else
     echo "  ✓ Piper executable found."
 fi
 
-# ------------------------------------------------------------
 # Check shared libraries
-# ------------------------------------------------------------
 
 if [ "$OS" = "Linux" ]; then
 
@@ -131,9 +123,7 @@ if [ "$OS" = "Linux" ]; then
 
 fi
 
-# ------------------------------------------------------------
 # Reinstall Piper if anything is missing
-# ------------------------------------------------------------
 
 if [ "$PIPER_NEEDS_INSTALL" = true ]; then
 
@@ -164,9 +154,7 @@ if [ "$PIPER_NEEDS_INSTALL" = true ]; then
 
     rm -f "$PACKAGE"
 
-    # --------------------------------------------------------
     # Check executable after extraction
-    # --------------------------------------------------------
 
     if [ ! -f "$PIPER_BINARY" ]; then
         echo ""
@@ -187,9 +175,7 @@ if [ "$PIPER_NEEDS_INSTALL" = true ]; then
             exit 1
         fi
 
-        # ----------------------------------------------------
         # Check required libraries after extraction
-        # ----------------------------------------------------
 
         if [ ! -f "$PIPER_DIR/libpiper_phonemize.so.1" ]; then
             echo ""
@@ -223,9 +209,7 @@ else
 
 fi
 
-# ============================================================
 # Verify Piper dependencies
-# ============================================================
 
 if [ "$OS" = "Linux" ]; then
 
@@ -264,9 +248,7 @@ if [ "$OS" = "Linux" ]; then
 
 fi
 
-# ============================================================
 # Download voice model
-# ============================================================
 
 cd "$BASE/voices"
 
@@ -289,9 +271,7 @@ else
 
 fi
 
-# ============================================================
 # Download language model
-# ============================================================
 
 MODELS_DIR="$PROJECT_DIR/models"
 
@@ -334,9 +314,7 @@ else
 
 fi
 
-# ============================================================
 # Download vision model
-# ============================================================
 
 VISION_MODEL="SmolVLM-256M-Instruct-Q8_0.gguf"
 VISION_MMPROJ="mmproj-SmolVLM-256M-Instruct-Q8_0.gguf"
@@ -373,9 +351,7 @@ else
 
 fi
 
-# ============================================================
 # Download Vosk speech recognition model
-# ============================================================
 
 VOSK_MODEL="vosk-model-small-en-us-0.15"
 VOSK_ZIP="$VOSK_MODEL.zip"
@@ -406,9 +382,7 @@ else
 
 fi
 
-# ============================================================
 # Check FFmpeg
-# ============================================================
 
 if ! command -v ffmpeg >/dev/null 2>&1; then
 
@@ -443,9 +417,7 @@ else
 
 fi
 
-# ============================================================
 # Check unzip
-# ============================================================
 
 if ! command -v unzip >/dev/null 2>&1; then
 
@@ -474,9 +446,7 @@ else
 
 fi
 
-# ============================================================
 # Finished
-# ============================================================
 
 echo ""
 echo "=============================================="

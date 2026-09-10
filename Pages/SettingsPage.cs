@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace LittleLinguist.Pages;
 
+// Displays the learning settings and allows the user to select skills.
 public class SettingsPage : ContentPage
 {
-    // Guardamos las casillas porque necesitaremos consultar su valor.
     private readonly CheckBox _pronunciationCheckBox;
     private readonly CheckBox _writingCheckBox;
     private readonly CheckBox _readingCheckBox;
@@ -19,19 +19,12 @@ public class SettingsPage : ContentPage
     private readonly TextBlock _statusText;
     private readonly LearningSettings _settings;
 
+    // Initializes the settings page and its user interface.
     public SettingsPage()
     {
         _settings = LearningSettings.Load();
 
-        // ---------------------------------------------------------
-        // FONDO
-        // ---------------------------------------------------------
-
         Background = new SolidColorBrush(Color.Parse("#EDE7FF"));
-
-        // ---------------------------------------------------------
-        // BOTÓN BACK
-        // ---------------------------------------------------------
 
         var backButton = new Button
         {
@@ -46,10 +39,6 @@ public class SettingsPage : ContentPage
         };
 
         backButton.Click += BackButton_Click;
-
-        // ---------------------------------------------------------
-        // TÍTULO
-        // ---------------------------------------------------------
 
         var title = new TextBlock
         {
@@ -69,10 +58,6 @@ public class SettingsPage : ContentPage
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Child = title
         };
-
-        // ---------------------------------------------------------
-        // DECORACIÓN
-        // ---------------------------------------------------------
 
         var decoration = new Grid
         {
@@ -101,10 +86,6 @@ public class SettingsPage : ContentPage
 
         decoration.Children.Add(star);
         decoration.Children.Add(cloud);
-
-        // ---------------------------------------------------------
-        // HABILIDADES
-        // ---------------------------------------------------------
 
         _pronunciationCheckBox = new CheckBox
         {
@@ -176,10 +157,6 @@ public class SettingsPage : ContentPage
             skillsGrid
         );
 
-        // ---------------------------------------------------------
-        // MENSAJE Y BOTÓN START
-        // ---------------------------------------------------------
-
         _statusText = new TextBlock
         {
             Text = "",
@@ -216,10 +193,6 @@ public class SettingsPage : ContentPage
         bottomGrid.Children.Add(_statusText);
         bottomGrid.Children.Add(startButton);
 
-        // ---------------------------------------------------------
-        // CONTENIDO COMPLETO
-        // ---------------------------------------------------------
-
         var mainPanel = new StackPanel
         {
             Margin = new Thickness(35, 20),
@@ -240,7 +213,7 @@ public class SettingsPage : ContentPage
         };
     }
 
-    // Crea un recuadro con título.
+    // Creates a bordered section with a title and content.
     private static StackPanel CreateSection(string title, Control content)
     {
         return new StackPanel
@@ -271,7 +244,7 @@ public class SettingsPage : ContentPage
         };
     }
 
-    // Crea una habilidad con casilla y descripción.
+    // Creates a skill option with a checkbox and description.
     private static StackPanel CreateSkill(
         CheckBox checkBox,
         string description)
@@ -293,6 +266,7 @@ public class SettingsPage : ContentPage
         };
     }
 
+    // Adds a control to the specified grid position.
     private static void AddToGrid(
         Grid grid,
         Control control,
@@ -304,7 +278,7 @@ public class SettingsPage : ContentPage
         grid.Children.Add(control);
     }
 
-    // Vuelve a la página anterior.
+    /// Returns to the previous page.
     private async void BackButton_Click(
         object? sender,
         RoutedEventArgs e)
@@ -315,7 +289,7 @@ public class SettingsPage : ContentPage
         }
     }
 
-    // Comprueba que se haya seleccionado alguna habilidad.
+    // Validates and saves the selected learning skills.
     private async void StartButton_Click(
     object? sender,
     RoutedEventArgs e)
@@ -334,7 +308,6 @@ public class SettingsPage : ContentPage
             return;
         }
 
-        // Guardamos el estado actual de las casillas
         _settings.Pronunciation =
             _pronunciationCheckBox.IsChecked == true;
 

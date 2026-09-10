@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
-using LittleLinguist.Controls;
 using OpenCvSharp;
 using System.IO;
 using Avalonia.Media.Imaging;
@@ -14,6 +13,7 @@ using System.Threading.Tasks;
 
 namespace LittleLinguist.Pages;
 
+// Handles the camera interface, photo capture, and camera preview.
 public class CameraPage : ContentPage
 {
     private readonly Image _cameraPreview;
@@ -23,6 +23,8 @@ public class CameraPage : ContentPage
     private Button retakeButton;
     private Button continueButton;
     private bool _photoTaken;
+
+    // Initializes the camera page and its user interface.
     public CameraPage()
     {
         NavigationPage.SetHasBackButton(this, false);
@@ -38,7 +40,6 @@ public class CameraPage : ContentPage
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        // título
         var title = new TextBlock
         {
             Text = "📸 Take a picture!",
@@ -50,7 +51,6 @@ public class CameraPage : ContentPage
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        // decoración
         var decoration = new Grid
         {
             Height = 45
@@ -78,38 +78,6 @@ public class CameraPage : ContentPage
 
         decoration.Children.Add(stars);
         decoration.Children.Add(cloud);
-
-        // ---------------------------------------------------------
-        // INSTRUCCIONES
-        // ---------------------------------------------------------
-
-        // var instructions = new TextBlock
-        // {
-        //     Text = "Press the button below to take a picture!",
-        //     FontSize = 18,
-        //     TextAlignment = TextAlignment.Center,
-        //     TextWrapping = TextWrapping.Wrap,
-        //     HorizontalAlignment = HorizontalAlignment.Center
-        // };
-
-        // ---------------------------------------------------------
-        // BOTÓN CLEAR
-        // ---------------------------------------------------------
-
-        // var clearButton = new Button
-        // {
-        //     Content = "Clear",
-        //     FontSize = 18,
-        //     Padding = new Thickness(25, 12),
-        //     HorizontalAlignment = HorizontalAlignment.Stretch,
-        //     HorizontalContentAlignment = HorizontalAlignment.Center
-        // };
-
-        // clearButton.Click += ClearButton_Click;
-
-        // ---------------------------------------------------------
-        // BOTÓN CONTINUE
-        // ---------------------------------------------------------
 
         continueButton = new Button
         {
@@ -143,10 +111,6 @@ public class CameraPage : ContentPage
 
         retakeButton.Click += RetakeButton_Click;
 
-        // ---------------------------------------------------------
-        // CÁMARA
-        // ---------------------------------------------------------
-
         _cameraPreview = new Image
         {
             Width = 480,
@@ -169,10 +133,6 @@ public class CameraPage : ContentPage
             Child = _cameraPreview
         };
 
-        // ---------------------------------------------------------
-        // GRID DE BOTONES
-        // ---------------------------------------------------------
-
         var buttonsGrid = new Grid
         {
             ColumnDefinitions = ColumnDefinitions.Parse("*,*"),
@@ -180,75 +140,43 @@ public class CameraPage : ContentPage
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
 
-        // Grid.SetColumn(clearButton, 0);
         Grid.SetColumn(continueButton, 1);
         Grid.SetColumn(retakeButton, 0);
 
-        // buttonsGrid.Children.Add(clearButton);
         buttonsGrid.Children.Add(continueButton);
         buttonsGrid.Children.Add(retakeButton);
-
-        // ---------------------------------------------------------
-        // GRID PRINCIPAL
-        // ---------------------------------------------------------
 
         var mainGrid = new Grid
         {
             Margin = new Thickness(30),
-
-            // Título: altura automática.
-            // Instrucciones: altura automática.
-            // Canvas: ocupa todo el espacio restante.
-            // Mensaje: altura automática.
-            // Botones: altura automática.
             RowDefinitions =
                 RowDefinitions.Parse("Auto,Auto,*,Auto,Auto"),
 
             RowSpacing = 15
         };
 
-        // Decoración
         Grid.SetRow(decoration, 0);
         mainGrid.Children.Add(decoration);
 
-        // Título
         Grid.SetRow(title, 1);
         mainGrid.Children.Add(title);
 
-        // Cámara
         Grid.SetRow(cameraBorder, 2);
         mainGrid.Children.Add(cameraBorder);
 
-        // Botones
         Grid.SetRow(buttonsGrid, 3);
         mainGrid.Children.Add(buttonsGrid);
 
         Content = mainGrid;
     }
 
-    // ---------------------------------------------------------
-    // CLEAR
-    // ---------------------------------------------------------
-
-    // private void ClearButton_Click(
-    //     object? sender,
-    //     RoutedEventArgs e)
-    // {
-    //     _tracingCanvas.Clear();
-    //     _feedbackText.Text = "";
-    // }
-
-    // ---------------------------------------------------------
-    // CONTINUE
-    // ---------------------------------------------------------
-
+    // Captures the current frame or confirms the photo and continues.
     private async void ContinueButton_Click(
         object? sender,
         RoutedEventArgs e)
     {
         if (!_photoTaken){
             _photo.Source = _cameraPreview.Source;
-            // Detenemos el bucle de la webcam.
             _cameraCancellation?.Cancel();
             if (_cameraTask is not null)
             {
@@ -267,8 +195,6 @@ public class CameraPage : ContentPage
             _photoTaken = true;
         }
         else{
-            // Aquí puedes agregar la lógica para continuar a la siguiente página
-            // Por ejemplo, podrías navegar a otra página o realizar alguna acción con la foto tomada.
             var photoStoryPage = new PhotoStoryPage();
             using var memoryStream = new MemoryStream();
             (_photo.Source as Bitmap)?.Save(memoryStream, PngBitmapEncoderOptions.Default);
@@ -277,13 +203,13 @@ public class CameraPage : ContentPage
 
             if (Navigation is not null)
             {
-                // De momento también abre SettingsPage.
                 await Navigation.PushAsync(photoStoryPage);
             }
         }
         
     }
 
+    // Clears the current photo and restarts the camera preview.
     private async void RetakeButton_Click(
         object? sender,
         RoutedEventArgs e)
@@ -295,6 +221,7 @@ public class CameraPage : ContentPage
         await UpdateCameraPreview();
     }
 
+    // Converts an OpenCV frame into an Avalonia bitmap.
     private static Avalonia.Media.Imaging.Bitmap MatToAvaloniaBitmap(
     Mat frame)
     {
@@ -310,9 +237,9 @@ public class CameraPage : ContentPage
         return new Avalonia.Media.Imaging.Bitmap(stream);
     }
 
+    // Starts the camera preview if it is not already running.
     public Task UpdateCameraPreview()
     {
-        // Evita iniciar la cámara dos veces.
         if (_cameraTask is not null &&
             !_cameraTask.IsCompleted)
         {
@@ -328,6 +255,7 @@ public class CameraPage : ContentPage
         return _cameraTask;
     }
 
+    // Continuously captures frames from the camera and updates the preview.
     public async Task CameraLoop(CancellationToken token)
     {
 
@@ -347,7 +275,6 @@ public class CameraPage : ContentPage
                 Bitmap bitmap = MatToAvaloniaBitmap(frame);
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
-                    // Liberamos la imagen anterior.
                     if (_cameraPreview.Source
                         is IDisposable previousImage)
                     {
@@ -358,13 +285,11 @@ public class CameraPage : ContentPage
                         bitmap;
                 });
 
-                // Aproximadamente 30 fotogramas por segundo.
                 await Task.Delay(33);
             }
         }
         catch (OperationCanceledException)
         {
-            // La tarea fue cancelada, salimos del bucle.
         }
     }
 }
