@@ -271,30 +271,6 @@ public class ReadingComprehensionPage : ContentPage
                     questionPanel
             };
 
-        var centerPanel =
-            new StackPanel
-            {
-                Spacing = 20,
-
-                HorizontalAlignment =
-                    HorizontalAlignment.Center,
-
-                VerticalAlignment =
-                    VerticalAlignment.Center
-            };
-
-        centerPanel.Children.Add(
-            title
-        );
-
-        centerPanel.Children.Add(
-            subtitle
-        );
-
-        centerPanel.Children.Add(
-            questionCard
-        );
-
         var star1 =
             new TextBlock
             {
@@ -308,18 +284,10 @@ public class ReadingComprehensionPage : ContentPage
                     ),
 
                 HorizontalAlignment =
-                    HorizontalAlignment.Left,
+                    HorizontalAlignment.Center,
 
                 VerticalAlignment =
-                    VerticalAlignment.Top,
-
-                Margin =
-                    new Thickness(
-                        75,
-                        100,
-                        0,
-                        0
-                    )
+                    VerticalAlignment.Center
             };
 
         var star2 =
@@ -335,18 +303,10 @@ public class ReadingComprehensionPage : ContentPage
                     ),
 
                 HorizontalAlignment =
-                    HorizontalAlignment.Right,
+                    HorizontalAlignment.Center,
 
                 VerticalAlignment =
-                    VerticalAlignment.Top,
-
-                Margin =
-                    new Thickness(
-                        0,
-                        150,
-                        80,
-                        0
-                    )
+                    VerticalAlignment.Center
             };
 
         var star3 =
@@ -426,6 +386,45 @@ public class ReadingComprehensionPage : ContentPage
                     )
             };
 
+        var titleGrid =
+            new Grid
+            {
+                ColumnDefinitions =
+                    new ColumnDefinitions(
+                        "Auto,*,Auto"
+                    ),
+
+                HorizontalAlignment =
+                    HorizontalAlignment.Stretch
+            };
+
+        Grid.SetColumn(
+            star1,
+            0
+        );
+
+        Grid.SetColumn(
+            title,
+            1
+        );
+
+        Grid.SetColumn(
+            star2,
+            2
+        );
+
+        titleGrid.Children.Add(
+            star1
+        );
+
+        titleGrid.Children.Add(
+            title
+        );
+
+        titleGrid.Children.Add(
+            star2
+        );
+
         var mainGrid =
             new Grid
             {
@@ -433,19 +432,50 @@ public class ReadingComprehensionPage : ContentPage
                     new Thickness(30),
 
                 RowDefinitions =
-                    RowDefinitions.Parse("*,Auto")
+                    RowDefinitions.Parse(
+                        "Auto,Auto,Auto,Auto"
+                    ),
+
+                ColumnDefinitions =
+                    new ColumnDefinitions(
+                        "1*"
+                    )
             };
 
-        Grid.SetRow(centerPanel, 0);
-
-        Grid.SetRow(skipButton, 1);
-
-        mainGrid.Children.Add(
-            star1
+        Grid.SetRow(
+            titleGrid,
+            0
         );
 
         mainGrid.Children.Add(
-            star2
+            titleGrid
+        );
+
+        Grid.SetRow(
+            subtitle,
+            1
+        );
+
+        mainGrid.Children.Add(
+            subtitle
+        );
+
+        Grid.SetRow(
+            questionCard,
+            2
+        );
+
+        mainGrid.Children.Add(
+            questionCard
+        );
+
+        Grid.SetRow(
+            skipButton,
+            3
+        );
+
+        mainGrid.Children.Add(
+            skipButton
         );
 
         mainGrid.Children.Add(
@@ -460,16 +490,21 @@ public class ReadingComprehensionPage : ContentPage
             cloud2
         );
 
-        mainGrid.Children.Add(
-            centerPanel
-        );
+        var scrollViewer =
+            new ScrollViewer
+            {
+                Content =
+                    mainGrid,
 
-        mainGrid.Children.Add(
-            skipButton
-        );
+                HorizontalScrollBarVisibility =
+                    Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+
+                VerticalScrollBarVisibility =
+                    Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
+            };
 
         Content =
-            mainGrid;
+            scrollViewer;
 
         _ = LoadQuestions(story);
     }
