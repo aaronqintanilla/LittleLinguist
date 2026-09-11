@@ -63,6 +63,11 @@ case "$OS/$ARCH" in
         PACKAGE="piper_macos_aarch64.tar.gz"
         PIPER_EXECUTABLE="piper/piper"
         ARCHIVE_TYPE="tar"
+
+        if ! brew list espeak-ng >/dev/null 2>&1; then
+            echo "Installing espeak-ng dependency via Homebrew..."
+            brew install espeak-ng
+        fi
         ;;
 
     MINGW*/x86_64|MSYS*/x86_64|CYGWIN*/x86_64)

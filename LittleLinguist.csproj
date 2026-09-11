@@ -26,7 +26,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="resources/**/*">
+    <None Include="resources/**/*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="resources\piper\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

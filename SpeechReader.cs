@@ -46,6 +46,9 @@ public class SpeechReader : IDisposable
         _piperPath = OperatingSystem.IsWindows() ? Path.Combine(basePath, "piper", "piper.exe") : Path.Combine(basePath, "piper", "piper");
         _modelPath = Path.Combine(basePath, "voices", "en_US-lessac-medium.onnx");
 
+        Console.WriteLine("================= SPEECH READER PATH ==================");
+        Console.WriteLine(basePath);
+
         if (!File.Exists(_piperPath))
             throw new FileNotFoundException(
                 "Piper engine not found. Run ./install-resources.sh", _piperPath);

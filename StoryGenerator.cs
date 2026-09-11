@@ -41,6 +41,8 @@ public class StoryGenerator
     private ModelParams? parameters;
     private CancellationTokenSource? _generation;
     InteractiveExecutor? executor;
+
+    private string storyContext = "";
     
     // Initializes a new chat session for story generation.
     void InitSession()
@@ -156,7 +158,6 @@ public class StoryGenerator
     public async Task WriteMiddle()
     {
         InitSession();
-        string storyContext = string.Join("\n\n", _sentences);
 
         await Generate(
             "Here's the story so far:\n\n" +
@@ -173,7 +174,6 @@ public class StoryGenerator
     public async Task WriteEnding()
     {
         InitSession();
-        string storyContext = string.Join("\n\n", _sentences);
 
         await Generate(
             "Here's the story so far:\n\n" +
@@ -219,6 +219,8 @@ public class StoryGenerator
 
                 OnTokenReceived(chunk);
             }
+
+            storyContext += generatedText;
 
             OnGenerationCompleted();
 
@@ -442,6 +444,7 @@ public class StoryGenerator
             executor = new InteractiveExecutor(context);
         }
         InitSession();*/
+        storyContext = "";
         Session.Instance.Reset();
         SentencesChanged?.Invoke(new List<string>());
     }
