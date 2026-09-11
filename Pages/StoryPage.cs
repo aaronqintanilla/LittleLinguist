@@ -13,14 +13,6 @@ using Avalonia.Controls.Documents;
 using Avalonia.Threading;
 using LittleLinguist.Services;
 
-/*
-TO DO:
-1. Increase story variety. The generator currently tends to reuse the same
-   characters, locations, and actions. Possible solutions include using a
-   small database of predefined elements or testing a more powerful AI model,
-   while considering the Arduino's memory limitations.
-*/
-
 // Displays the generated story and manages narration and learning activities.
 public class StoryPage : ContentPage
 {
@@ -219,13 +211,15 @@ public class StoryPage : ContentPage
         SpeechReader.Instance.SentenceChanged += OnSpeakingSentenceChanged;
     }
 
-    // Stops the story and returns to the home page.
+    // Stops the story and returns to the previous page.
     private async void FinishButton_Click(object? sender, RoutedEventArgs e)
     {
         StoryGenerator.Instance.StopStory();
-        if(Navigation is not null)
+        cont = 0;
+
+        if (Navigation is not null)
         {
-            await Navigation.PopAsync();
+            await Navigation.PopToRootAsync();
         }
     }
 

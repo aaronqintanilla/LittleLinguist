@@ -309,5 +309,4 @@ public class VisionEngine : IDisposable
 
         _lock.Dispose();
     }
-
 }

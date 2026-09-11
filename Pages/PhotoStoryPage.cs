@@ -212,13 +212,13 @@ public class PhotoStoryPage : ContentPage
         SpeechReader.Instance.SentenceChanged += OnSpeakingSentenceChanged;
     }
 
-    // Ends the program
+    // Stops the story and returns to the home page.
     private async void FinishButton_Click(object? sender, RoutedEventArgs e)
     {
         StoryGenerator.Instance.StopStory();
         if(Navigation is not null)
         {
-            await Navigation.PopAsync();
+            await Navigation.PopToRootAsync();
         }
     }
 
@@ -233,7 +233,7 @@ public class PhotoStoryPage : ContentPage
         if(Session.Instance.IsFinished)
         {
             StoryGenerator.Instance.StopStory();
-            await Navigation.PopAsync();
+            await Navigation.PopToRootAsync();
             return;
         }
 

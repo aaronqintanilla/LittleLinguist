@@ -51,6 +51,12 @@ public class StoryGenerator
         session.WithHistoryTransform(
             new PromptTemplateTransformer(model, withAssistant: true)
         );
+        context?.NativeHandle.MemoryClear();
+        if(model is not null && parameters is not null)
+        {
+            context = model.CreateContext(parameters);
+            executor = new InteractiveExecutor(context);
+        }
     }
 
     // Loads the language model and initializes the inference context.
@@ -428,14 +434,14 @@ public class StoryGenerator
     {
         PauseStory();
         _sentences.Clear();
-        context?.NativeHandle.MemoryClear();
-        context?.Dispose();
-        if(model is not null && parameters is not null)
+        //context?.NativeHandle.MemoryClear();
+        //context?.Dispose();
+        /*if(model is not null && parameters is not null)
         {
             context = model.CreateContext(parameters);
             executor = new InteractiveExecutor(context);
         }
-        InitSession();
+        InitSession();*/
         Session.Instance.Reset();
         SentencesChanged?.Invoke(new List<string>());
     }
